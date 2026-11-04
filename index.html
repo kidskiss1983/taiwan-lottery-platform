@@ -89,5 +89,45 @@
       本平台僅提供歷史資料與統計分析，不保證中獎。
     </footer>
   </main>
+  
+<script type="module">
+  import {
+    auth,
+    onAuthStateChanged,
+    signInAnonymously,
+    signOut
+  } from "./firebase.js";
+
+  const status = document.querySelector(".status");
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      status.innerHTML = `
+        <p>目前尚未登入</p>
+        <button id="anonymousLogin">訪客登入</button>
+      `;
+
+      document.getElementById("anonymousLogin").onclick = async () => {
+        try {
+          await signInAnonymously(auth);
+        } catch (error) {
+          alert("匿名登入失敗：" + error.message);
+        }
+      };
+
+      return;
+    }
+
+    status.innerHTML = `
+      <p>Firebase 連線成功！</p>
+      <p>登入狀態：${user.isAnonymous ? "匿名訪客" : "會員"}</p>
+      <button id="logout">登出</button>
+    `;
+
+    document.getElementById("logout").onclick = async () => {
+      await signOut(auth);
+    };
+  });
+</script>
 </body>
 </html>
