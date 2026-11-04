@@ -93,15 +93,20 @@
 
 <script type="module">
   import {
-    auth,
-    onAuthStateChanged,
-    signInAnonymously,
-    signInWithEmailAndPassword,
-    signOut,
-    sendEmailVerification,
-    EmailAuthProvider,
-    linkWithCredential
-  } from "./firebase.js";
+  auth,
+  db,
+  onAuthStateChanged,
+  signInAnonymously,
+  signInWithEmailAndPassword,
+  signOut,
+  sendEmailVerification,
+  EmailAuthProvider,
+  linkWithCredential,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp
+} from "./firebase.js";
 
   const status = document.querySelector(".status");
 
