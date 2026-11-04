@@ -9,7 +9,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  sendEmailVerification
+   sendEmailVerification,
+  EmailAuthProvider,
+  linkWithCredential
 } from
   "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 
@@ -44,6 +46,8 @@ export {
   signInWithEmailAndPassword,
   signOut,
   sendEmailVerification,
+  EmailAuthProvider,
+  linkWithCredential,
   collection,
   doc,
   getDoc,
