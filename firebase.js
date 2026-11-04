@@ -53,7 +53,9 @@ export {
   collection,
   doc,
   getDoc,
-  getDocs
+  getDocs,
+  setDoc,
+  serverTimestamp
 };
 
 console.log("Firebase 初始化成功！");
