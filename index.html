@@ -218,53 +218,131 @@
     };
   }
 
-  // 顯示登入狀態
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      showLogin();
-      return;
+  // 顯示登入狀態與會員權限
+onAuthStateChanged(auth, async (user) => {
+
+  if (!user) {
+    showLogin();
+    return;
+  }
+
+  // 匿名訪客
+  if (user.isAnonymous) {
+    status.innerHTML = `
+      <h3>訪客登入成功</h3>
+      <p>目前身分：匿名訪客</p>
+      <p>可以查看三種彩券的開獎資料。</p>
+      <button id="logout">登出</button>
+      <button id="memberArea">會員註冊／登入</button>
+    `;
+
+    document.getElementById("logout").onclick =
+      () => signOut(auth);
+
+    document.getElementById("memberArea").onclick =
+      showLogin;
+
+    return;
+  }
+
+  // 載入會員權限
+  status.innerHTML = "<p>正在讀取會員資料...</p>";
+
+  try {
+
+    // 查詢管理員名單
+    const adminRef = doc(db, "admins", user.uid);
+    const adminSnap = await getDoc(adminRef);
+
+    const isAdmin = adminSnap.exists();
+
+    // 查詢會員資料
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    let isVIP = false;
+
+    // 第一次登入，自動建立基本會員資料
+    if (!userSnap.exists()) {
+
+      await setDoc(userRef, {
+        email: user.email || "",
+        role: "member",
+        vip: false,
+        createdAt: serverTimestamp()
+      });
+
+    } else {
+
+      isVIP = userSnap.data().vip === true;
+
     }
 
-    if (user.isAnonymous) {
-      status.innerHTML = `
-        <h3>訪客登入成功</h3>
-        <p>目前身分：匿名訪客</p>
-        <p>可以查看三種彩券的開獎資料。</p>
-        <button id="logout">登出</button>
-        <button id="memberArea">會員註冊／登入</button>
-      `;
+    // 顯示會員身分
+    let roleText = "一般會員";
 
-      document.getElementById("logout").onclick = () => signOut(auth);
-      document.getElementById("memberArea").onclick = showLogin;
-      return;
+    if (isAdmin) {
+      roleText = "管理員";
+    } else if (isVIP) {
+      roleText = "VIP 會員";
     }
 
     status.innerHTML = `
-      <h3>會員登入成功</h3>
+      <h3>登入成功</h3>
+
       <p id="memberEmail"></p>
+      <p>目前身分：<strong>${roleText}</strong></p>
       <p id="verifyStatus"></p>
-      <button id="resendVerify">重新寄送驗證信</button>
+
+      <button id="resendVerify">
+        重新寄送驗證信
+      </button>
+
       <button id="logout">登出</button>
     `;
 
     document.getElementById("memberEmail").textContent =
-      "帳號：" + user.email;
+      "帳號：" + (user.email || "");
 
     document.getElementById("verifyStatus").textContent =
-      user.emailVerified ? "電子郵件已驗證" : "電子郵件尚未驗證";
+      user.emailVerified
+        ? "電子郵件已驗證"
+        : "電子郵件尚未驗證";
 
     document.getElementById("resendVerify").style.display =
       user.emailVerified ? "none" : "inline-block";
 
-    document.getElementById("resendVerify").onclick = async () => {
-      try {
-        await sendEmailVerification(user);
-        alert("驗證信已重新寄出，請檢查電子信箱。");
-      } catch (error) {
-        alert("寄送失敗：" + error.message);
-      }
-    };
+    document.getElementById("resendVerify").onclick =
+      async () => {
+        try {
+          await sendEmailVerification(user);
+          alert("驗證信已重新寄出，請檢查電子信箱。");
+        } catch (error) {
+          alert("寄送失敗：" + error.message);
+        }
+      };
 
+    document.getElementById("logout").onclick =
+      () => signOut(auth);
+
+  } catch (error) {
+
+    console.error("會員資料讀取失敗：", error);
+
+    status.innerHTML = `
+      <h3>會員資料讀取失敗</h3>
+      <p id="errorMessage"></p>
+      <button id="logout">登出</button>
+    `;
+
+    document.getElementById("errorMessage").textContent =
+      error.message;
+
+    document.getElementById("logout").onclick =
+      () => signOut(auth);
+  }
+
+});
     document.getElementById("logout").onclick = () => signOut(auth);
   });
 </script>
