@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>台灣彩券分析平台</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px 16px;
+      background: #101827;
+      color: #f1f5f9;
+      font-family: Arial, "Noto Sans TC", sans-serif;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+    header {
+      text-align: center;
+      padding: 32px 12px;
+    }
+    h1 { color: #fbbf24; }
+    .subtitle { color: #94a3b8; }
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .game {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+    }
+    .game h2 { color: #fbbf24; }
+    .status {
+      margin-top: 24px;
+      padding: 16px;
+      background: #1e293b;
+      border-radius: 12px;
+      color: #cbd5e1;
+      text-align: center;
+    }
+    footer {
+      margin-top: 36px;
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>台灣彩券分析平台</h1>
+      <p class="subtitle">三大彩券開獎資料與數據分析</p>
+    </header>
+
+    <section class="games">
+      <article class="game">
+        <h2>大樂透</h2>
+        <p>6 個號碼：1～49</p>
+        <p>特別號：1～49</p>
+      </article>
+
+      <article class="game">
+        <h2>今彩 539</h2>
+        <p>5 個號碼：1～39</p>
+      </article>
+
+      <article class="game">
+        <h2>威力彩</h2>
+        <p>第一區：6 個號碼，1～38</p>
+        <p>第二區：1 個號碼，1～8</p>
+      </article>
+    </section>
+
+    <section class="status">
+      <p>平台首頁已建立</p>
+      <p>開獎資料與會員功能建置中</p>
+    </section>
+
+    <footer>
+      本平台僅提供歷史資料與統計分析，不保證中獎。
+    </footer>
+  </main>
+</body>
+</html>
