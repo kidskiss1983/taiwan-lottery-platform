@@ -313,6 +313,96 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("openAdmin").onclick = () => {
     document.getElementById("adminPanel").style.display = "block";
   };
+
+  document.getElementById("loadMembers").onclick = async () => {
+    const btn = document.getElementById("loadMembers");
+    const area = document.getElementById("memberList");
+
+    btn.disabled = true;
+    btn.textContent = "正在載入會員資料...";
+    area.textContent = "請稍候...";
+
+    try {
+      const snapshot = await getDocs(collection(db, "users"));
+
+      const members = snapshot.docs.map(d => ({
+        uid: d.id,
+        ...d.data()
+      }));
+
+      const vipCount = members.filter(m => m.vip === true).length;
+
+      area.replaceChildren();
+
+      const summary = document.createElement("p");
+      summary.textContent =
+        `會員總數：${members.length} 人｜VIP：${vipCount} 人｜一般會員：${members.length - vipCount} 人`;
+      area.appendChild(summary);
+
+      if (members.length === 0) {
+        area.appendChild(document.createTextNode("目前沒有會員資料。"));
+        return;
+      }
+
+      const table = document.createElement("table");
+      table.style.width = "100%";
+      table.style.borderCollapse = "collapse";
+
+      const headers = ["電子郵件", "會員身分", "VIP 狀態", "註冊日期"];
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+
+      headers.forEach(title => {
+        const th = document.createElement("th");
+        th.textContent = title;
+        th.style.padding = "10px";
+        th.style.borderBottom = "1px solid #64748b";
+        th.style.textAlign = "left";
+        headerRow.appendChild(th);
+      });
+
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      members.forEach(member => {
+        const tr = document.createElement("tr");
+
+        const created = member.createdAt?.toDate
+          ? member.createdAt.toDate().toLocaleDateString("zh-TW")
+          : "無資料";
+
+        const values = [
+          member.email || "無資料",
+          member.role || "member",
+          member.vip === true ? "VIP" : "一般會員",
+          created
+        ];
+
+        values.forEach(value => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          td.style.padding = "10px";
+          td.style.borderBottom = "1px solid #334155";
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      area.appendChild(table);
+
+    } catch (error) {
+      console.error("會員清單讀取失敗：", error);
+      area.textContent = "讀取失敗：" + error.message;
+
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "重新載入會員清單";
+    }
+  };
 }
 
     document.getElementById("memberEmail").textContent =
