@@ -201,9 +201,9 @@ area.replaceChildren();
 
 const summary = document.createElement("p");
 summary.textContent =
-會員總數：$DIL1 人｜VIP：$DIL2 人｜一般會員：$DIL3 人;
+  `會員總數：${members.length} 人｜VIP：${vipCount} 人｜一般會員：${members.length - vipCount} 人`;
 
-      area.appendChild(summary);
+area.appendChild(summary);
 
 if (members.length === 0) {
         area.appendChild(document.createTextNode("目前沒有會員資料。"));
