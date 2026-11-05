@@ -434,6 +434,27 @@ onAuthStateChanged(auth, async (user) => {
 
           console.log("已自動取消過期 VIP：", member.email);
         }
+      // 替舊有有效期限 VIP 補上 Timestamp
+else if (
+  member.vip === true &&
+  typeof member.vipExpiresAt === "string" &&
+  /^\d{4}-\d{2}-\d{2}$/.test(member.vipExpiresAt) &&
+  !member.vipExpiresAtTimestamp
+) {
+  const expiryTimestamp =
+    new Date(`${member.vipExpiresAt}T00:00:00`);
+
+  // 到期日隔天 00:00 才失效
+  expiryTimestamp.setDate(expiryTimestamp.getDate() + 1);
+
+  await updateDoc(doc(db, "users", member.uid), {
+    vipExpiresAtTimestamp: expiryTimestamp
+  });
+
+  member.vipExpiresAtTimestamp = expiryTimestamp;
+
+  console.log("已補上 VIP 到期 Timestamp：", member.email);
+}
       }
 
       const vipCount = members.filter(m => m.vip === true).length;
