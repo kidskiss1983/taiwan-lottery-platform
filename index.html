@@ -814,11 +814,12 @@ if (isVIP || isAdmin) {
           /^\d{4}-\d{2}-\d{2}$/.test(member.vipExpiresAt) &&
           todayString > member.vipExpiresAt
         ) {
-          await updateDoc(doc(db, "users", member.uid), {
-            vip: false,
-            vipExpiresAt: null,
-            vipUpdatedAt: serverTimestamp()
-          });
+         await updateDoc(doc(db, "users", member.uid), {
+  vip: false,
+  vipExpiresAt: null,
+  vipExpiresAtTimestamp: null,
+  vipUpdatedAt: serverTimestamp()
+});
 
           // 同步更新目前畫面使用的會員資料
           member.vip = false;
