@@ -142,6 +142,7 @@ button:disabled {
   signInWithEmailAndPassword,
   signOut,
   sendEmailVerification,
+  sendPasswordResetEmail,
   EmailAuthProvider,
   linkWithCredential,
   doc,
@@ -189,6 +190,9 @@ button:disabled {
           style="width:100%;padding:12px;margin:6px 0">
 
         <button id="loginBtn">會員登入</button>
+        <button id="forgotPassword" type="button">
+  忘記密碼？
+</button>
       </section>
 
       <hr>
@@ -251,7 +255,22 @@ button:disabled {
         message.textContent = "登入失敗：" + error.message;
       }
     };
+document.getElementById("forgotPassword").onclick = async () => {
+  const email = document.getElementById("loginEmail").value.trim();
 
+  if (!email) {
+    alert("請先輸入註冊時使用的 Email！");
+    return;
+  }
+
+  try {
+    await sendPasswordResetEmail(auth, email);
+    alert("密碼重設信已寄出！請到信箱查看。");
+  } catch (error) {
+    console.error("密碼重設失敗：", error);
+    alert("寄送失敗：" + error.message);
+  }
+};
     // 訪客登入
     document.getElementById("anonymousBtn").onclick = async () => {
       try {
