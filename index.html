@@ -52,6 +52,48 @@
       color: #64748b;
       font-size: 13px;
     }
+    /* 全站按鈕美化 */
+button {
+  border: 1px solid #3b82f6;
+  border-radius: 10px;
+  padding: 11px 20px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 5px 4px;
+}
+
+button:hover {
+  filter: brightness(1.2);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px #2563eb55;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 會員清單按鈕 */
+#loadMembers {
+  background: linear-gradient(135deg, #0d9488, #0f766e);
+  border-color: #14b8a6;
+}
+
+/* 登出按鈕 */
+#logout {
+  background: linear-gradient(135deg, #475569, #334155);
+  border-color: #64748b;
+}
   </style>
 </head>
 <body>
