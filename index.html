@@ -726,8 +726,13 @@ onAuthStateChanged(auth, async (user) => {
           <option value="powerlottery">威力彩</option>
         </select>
 
-        <p>選擇號碼：</p>
-        <div id="vipNumberArea"></div>
+       <p>一般號碼（選擇 6 個）：</p>
+<div id="vipNumberArea"></div>
+
+<div id="vipSpecialArea" style="display:none">
+  <p>大樂透特別號（另外選擇 1 個）：</p>
+  <div id="vipSpecialNumberArea"></div>
+</div>
 
         <div id="vipSecondArea" style="display:none">
           <p>威力彩第二區：</p>
