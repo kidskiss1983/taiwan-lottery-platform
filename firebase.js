@@ -23,6 +23,7 @@ import {
   getDoc,
   getDocs,
   setDoc,
+  updateDoc,
   serverTimestamp
 } from
   "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
@@ -57,6 +58,7 @@ export {
   getDoc,
   getDocs,
   setDoc,
+  updateDoc,
   serverTimestamp
 };
 
