@@ -475,17 +475,75 @@ if (member.vip === true) {
 }
 
 vipButton.onclick = async () => {
-  const action = member.vip === true ? "取消 VIP" : "升級 VIP";
+  const isVip = member.vip === true;
+  let expiryDate = null;
 
-  if (!confirm(`確定要對 ${member.email || "此會員"} 執行「${action}」嗎？`)) {
-    return;
+  if (isVip) {
+    if (!confirm(`確定要取消 ${member.email} 的 VIP 資格嗎？`)) {
+      return;
+    }
+  } else {
+    const choice = prompt(
+      "請選擇 VIP 期限：\n\n" +
+      "0 = 永久 VIP\n" +
+      "30 = 30 天\n" +
+      "90 = 90 天\n" +
+      "180 = 180 天\n" +
+      "365 = 365 天\n" +
+      "自訂 = 輸入指定到期日"
+    );
+
+    if (choice === null) return;
+
+    if (choice.trim().toLowerCase() === "自訂") {
+      const customDate = prompt("請輸入到期日（YYYY-MM-DD）：");
+
+      if (customDate === null) return;
+
+      const dateMatch = customDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const parsedDate = new Date(customDate + "T00:00:00");
+
+      if (
+        !dateMatch ||
+        isNaN(parsedDate.getTime()) ||
+        parsedDate.toLocaleDateString("en-CA") !== customDate ||
+        parsedDate <= new Date(new Date().toDateString())
+      ) {
+        alert("日期格式錯誤，或到期日必須是未來日期！");
+        return;
+      }
+
+      expiryDate = customDate;
+
+    } else {
+      const days = Number(choice);
+
+      if (![0, 30, 90, 180, 365].includes(days)) {
+        alert("請輸入 0、30、90、180、365 或自訂。");
+        return;
+      }
+
+      if (days > 0) {
+        const date = new Date();
+        date.setDate(date.getDate() + days);
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+
+        expiryDate = `${year}-${month}-${day}`;
+      }
+    }
   }
+
+  const action = isVip ? "取消 VIP" : "升級 VIP";
 
   vipButton.disabled = true;
 
   try {
     await updateDoc(doc(db, "users", member.uid), {
-      vip: member.vip !== true,
+      vip: !isVip,
+      vipExpiresAt: isVip ? null : expiryDate,
       vipUpdatedAt: serverTimestamp()
     });
 
@@ -498,7 +556,6 @@ vipButton.onclick = async () => {
     vipButton.disabled = false;
   }
 };
-
 actionTd.appendChild(vipButton);
 tr.appendChild(actionTd);
 
