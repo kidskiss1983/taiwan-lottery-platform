@@ -18,7 +18,29 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+      - name: Validate Firebase credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          node --input-type=module <<'NODE'
+          const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
 
+          if (!raw) {
+            throw new Error("找不到 Firebase Secret");
+          }
+
+          const account = JSON.parse(raw);
+
+          if (account.project_id !== "taiwan-lottery-platform") {
+            throw new Error("Firebase 專案 ID 不正確");
+          }
+
+          if (!account.private_key || !account.client_email) {
+            throw new Error("Firebase 金鑰欄位不完整");
+          }
+
+          console.log("Firebase Secret 格式及專案 ID 驗證成功");
+          NODE
       - name: Import lottery history
         run: npm run import-history
         env:
