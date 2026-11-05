@@ -9,7 +9,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-   sendEmailVerification,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   EmailAuthProvider,
   linkWithCredential
 } from
