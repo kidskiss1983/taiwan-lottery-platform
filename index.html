@@ -1019,12 +1019,11 @@ onAuthStateChanged(auth, async (user) => {
   }
   ${
     isAdmin ? `
-      <hr>
-      <h3>管理員專區</h3>
-      <button id="openAdmin">開啟管理中心</button>
-      <div id="adminPanel" style="display:none;margin-top:20px">
+ <hr>
+
+<div id="adminPanel">
   <details>
-    <summary>會員管理與 VIP 資格設定</summary>
+    <summary>管理員專區｜會員管理與 VIP 資格設定</summary>
     <div class="details-content">
       <button id="loadMembers">載入會員清單</button>
       <div id="memberList" style="margin-top:20px"></div>
