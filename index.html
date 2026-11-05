@@ -612,12 +612,18 @@ item.style.cssText = `
       const numbers = document.createElement("p");
       numbers.textContent =
         "第一區：" + (pick.numbers || []).join("、");
+// 所有彩券都先顯示基本資料
+item.append(title, game, numbers);
+
+// 大樂透顯示特別號
 if (pick.game === "lotto649") {
   const special = document.createElement("p");
-  special.textContent = "特別號：" +
-    (pick.specialNumber != null ? pick.specialNumber : "尚未設定");
- item.append(title, game, numbers);
-item.appendChild(special);
+  special.textContent =
+    "特別號：" +
+    (pick.specialNumber != null
+      ? pick.specialNumber
+      : "尚未設定");
+  item.appendChild(special);
 }
 // 刪除自選組合
 const deleteButton = document.createElement("button");
@@ -1048,7 +1054,8 @@ if (isVIP || isAdmin) {
   // 載入已儲存的自選組合
   await loadVipPicks(user.uid);
 }
-   document.getElementById("loadMembers").onclick = async () => {
+ if (isAdmin) {
+  document.getElementById("loadMembers").onclick = async () => {
     const btn = document.getElementById("loadMembers");
     const area = document.getElementById("memberList");
 
@@ -1366,7 +1373,7 @@ table.appendChild(tbody);
     } catch (error) {
       console.error("會員清單讀取失敗：", error);
       area.textContent = "讀取失敗：" + error.message;
-
+}
     } finally {
       btn.disabled = false;
       btn.textContent = "重新載入會員清單";
