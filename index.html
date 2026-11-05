@@ -157,40 +157,34 @@ button:disabled {
 
   const status = document.querySelector(".status");
 // VIP 自選號碼功能
+
 function setupVipNumberPicker() {
   const gameSelect = document.getElementById("vipGame");
   const numberArea = document.getElementById("vipNumberArea");
   const secondArea = document.getElementById("vipSecondArea");
   const secondNumberArea = document.getElementById("vipSecondNumberArea");
+  const specialArea = document.getElementById("vipSpecialArea");
+  const specialNumberArea = document.getElementById("vipSpecialNumberArea");
   const message = document.getElementById("vipPickMessage");
 
   if (!gameSelect || !numberArea) return;
 
   const gameRules = {
-    lotto649: {
-      max: 49,
-      count: 6
-    },
-    lotto539: {
-      max: 39,
-      count: 5
-    },
-    powerlottery: {
-      max: 38,
-      count: 6,
-      secondMax: 8
-    }
+    lotto649: { max: 49, count: 6 },
+    lotto539: { max: 39, count: 5 },
+    powerlottery: { max: 38, count: 6, secondMax: 8 }
   };
 
   const selection = {
     game: "lotto649",
     numbers: [],
-    secondNumber: null
+    secondNumber: null,
+    specialNumber: null
   };
 
   window.vipPickSelection = selection;
 
-  function renderNumbers(container, max, selected, area, count) {
+  function renderNumbers(container, max, selected, area, count, excluded = []) {
     container.innerHTML = "";
 
     for (let n = 1; n <= max; n++) {
@@ -201,6 +195,9 @@ function setupVipNumberPicker() {
       btn.dataset.area = area;
 
       const active = selected.includes(n);
+      const blocked = excluded.includes(n) && !active;
+
+      btn.disabled = blocked;
 
       btn.style.cssText = `
         width:42px;
@@ -208,10 +205,11 @@ function setupVipNumberPicker() {
         margin:4px;
         border-radius:50%;
         border:1px solid #64748b;
-        background:${active ? "#2563eb" : "#1e293b"};
+        background:${active ? "#2563eb" : blocked ? "#475569" : "#1e293b"};
         color:white;
         font-weight:bold;
-        cursor:pointer;
+        cursor:${blocked ? "not-allowed" : "pointer"};
+        opacity:${blocked ? "0.4" : "1"};
       `;
 
       container.appendChild(btn);
@@ -230,8 +228,24 @@ function setupVipNumberPicker() {
       rule.max,
       selection.numbers,
       "main",
-      rule.count
+      rule.count,
+      selection.specialNumber === null ? [] : [selection.specialNumber]
     );
+
+    if (selection.game === "lotto649") {
+      specialArea.style.display = "block";
+
+      renderNumbers(
+        specialNumberArea,
+        49,
+        selection.specialNumber === null ? [] : [selection.specialNumber],
+        "special",
+        1,
+        selection.numbers
+      );
+    } else {
+      specialArea.style.display = "none";
+    }
 
     if (rule.secondMax) {
       secondArea.style.display = "block";
@@ -239,9 +253,7 @@ function setupVipNumberPicker() {
       renderNumbers(
         secondNumberArea,
         rule.secondMax,
-        selection.secondNumber === null
-          ? []
-          : [selection.secondNumber],
+        selection.secondNumber === null ? [] : [selection.secondNumber],
         "second",
         1
       );
@@ -252,25 +264,27 @@ function setupVipNumberPicker() {
 
   function handleNumberClick(event) {
     const btn = event.target.closest("button[data-number]");
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
 
     const number = Number(btn.dataset.number);
+    const area = btn.dataset.area;
     const rule = gameRules[selection.game];
 
-    if (btn.dataset.area === "main") {
+    if (area === "main") {
       if (selection.numbers.includes(number)) {
-        selection.numbers =
-          selection.numbers.filter(n => n !== number);
+        selection.numbers = selection.numbers.filter(n => n !== number);
       } else {
         if (selection.numbers.length >= rule.count) {
-          message.textContent =
-            `這種彩券最多只能選 ${rule.count} 個號碼。`;
+          message.textContent = `這種彩券最多只能選 ${rule.count} 個一般號碼。`;
           return;
         }
 
         selection.numbers.push(number);
       }
-    } else {
+    } else if (area === "special") {
+      selection.specialNumber =
+        selection.specialNumber === number ? null : number;
+    } else if (area === "second") {
       selection.secondNumber =
         selection.secondNumber === number ? null : number;
     }
@@ -281,17 +295,20 @@ function setupVipNumberPicker() {
 
   numberArea.addEventListener("click", handleNumberClick);
   secondNumberArea.addEventListener("click", handleNumberClick);
+  specialNumberArea.addEventListener("click", handleNumberClick);
 
   gameSelect.addEventListener("change", () => {
     selection.game = gameSelect.value;
     selection.numbers = [];
     selection.secondNumber = null;
+    selection.specialNumber = null;
     message.textContent = "";
     render();
   });
 
   render();
 }
+
   // 儲存 VIP 自選號碼
 async function saveVipPick(userUid) {
   const selection = window.vipPickSelection;
