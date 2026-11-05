@@ -132,176 +132,41 @@
           <h3 style="color:#fbbf24">管理員專區</h3>
           <p>歡迎使用台灣彩券平台管理系統。</p>
           <button id="openAdmin">進入管理員專區</button>
-          <div id="adminPanel" style="display:none;margin-top:20px">
-            <h3>平台管理中心</h3>
-            <p>開獎資料管理功能建置中。</p>
-            <p>會員與 VIP 管理功能建置中。</p>
-          </div>
-        </section>
-      ` : ""}
+          
+<div id="adminPanel" style="display:none;margin-top:20px">
+  <h3>平台管理中心</h3>
 
-      <button id="logout">登出</button>
-    `;
+  <hr>
 
-    const message = document.getElementById("authMessage");
+  <h3>一、會員管理</h3>
+  <p>查看平台所有註冊會員及 VIP 狀態。</p>
 
-    // 註冊會員
-    document.getElementById("registerBtn").onclick = async () => {
-      const email = document.getElementById("registerEmail").value.trim();
-      const password = document.getElementById("registerPassword").value;
-
-      if (!email || password.length < 6) {
-        message.textContent = "請輸入正確電子郵件及至少 6 位密碼";
-        return;
-      }
-
-      try {
-        message.textContent = "正在建立會員帳號…";
-
-        let currentUser = auth.currentUser;
-
-        // 若尚未登入，先建立匿名帳號
-        if (!currentUser) {
-          await signInAnonymously(auth);
-          currentUser = auth.currentUser;
-        }
-
-        const credential = EmailAuthProvider.credential(email, password);
-
-        // 將匿名帳號升級為正式會員，保留 UID
-        const result = await linkWithCredential(currentUser, credential);
-
-        // 寄送電子郵件驗證信
-        await sendEmailVerification(result.user);
-
-        alert("會員註冊成功！請到電子信箱收取驗證信。");
-
-      } catch (error) {
-        console.error(error);
-        message.textContent = "註冊失敗：" + error.message;
-      }
-    };
-
-    // 會員登入
-    document.getElementById("loginBtn").onclick = async () => {
-      const email = document.getElementById("loginEmail").value.trim();
-      const password = document.getElementById("loginPassword").value;
-
-      try {
-        message.textContent = "正在登入…";
-
-        await signInWithEmailAndPassword(auth, email, password);
-
-      } catch (error) {
-        console.error(error);
-        message.textContent = "登入失敗：" + error.message;
-      }
-    };
-
-    // 訪客登入
-    document.getElementById("anonymousBtn").onclick = async () => {
-      try {
-        await signInAnonymously(auth);
-      } catch (error) {
-        message.textContent = "訪客登入失敗：" + error.message;
-      }
-    };
-  }
-
-  // 顯示登入狀態與會員權限
-onAuthStateChanged(auth, async (user) => {
-
-  if (!user) {
-    showLogin();
-    return;
-  }
-
-  // 匿名訪客
-  if (user.isAnonymous) {
-    status.innerHTML = `
-      <h3>訪客登入成功</h3>
-      <p>目前身分：匿名訪客</p>
-      <p>可以查看三種彩券的開獎資料。</p>
-      <button id="logout">登出</button>
-      <button id="memberArea">會員註冊／登入</button>
-    `;
-   
-    document.getElementById("logout").onclick =
-      () => signOut(auth);
-
-    document.getElementById("memberArea").onclick =
-      showLogin;
-
-    return;
-  }
-
-  // 載入會員權限
-  status.innerHTML = "<p>正在讀取會員資料...</p>";
-
-  try {
-
-    // 查詢管理員名單
-    const adminRef = doc(db, "admins", user.uid);
-    const adminSnap = await getDoc(adminRef);
-
-    const isAdmin = adminSnap.exists();
-
-    // 查詢會員資料
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    let isVIP = false;
-
-    // 第一次登入，自動建立基本會員資料
-    if (!userSnap.exists()) {
-
-      await setDoc(userRef, {
-        email: user.email || "",
-        role: "member",
-        vip: false,
-        createdAt: serverTimestamp()
-      });
-
-    } else {
-
-      isVIP = userSnap.data().vip === true;
-
-    }
-
-    // 顯示會員身分
-    let roleText = "一般會員";
-
-    if (isAdmin) {
-      roleText = "管理員";
-    } else if (isVIP) {
-      roleText = "VIP 會員";
-    }
-
-   
-status.innerHTML = `
-  <h3>登入成功</h3>
-
-  <p id="memberEmail"></p>
-  <p>目前身分：<strong>${roleText}</strong></p>
-  <p id="verifyStatus"></p>
-
-  <button id="resendVerify">
-    重新寄送驗證信
+  <button id="loadMembers">
+    載入會員清單
   </button>
 
-  ${isAdmin ? `
-    <hr style="margin:24px 0;border-color:#475569">
+  <div id="memberList" style="margin-top:20px;overflow-x:auto">
+    <p>尚未載入會員資料。</p>
+  </div>
 
-    <section style="padding:16px;background:#0f172a;border-radius:12px">
-      <h3 style="color:#fbbf24">管理員專區</h3>
-      <p>歡迎使用台灣彩券平台管理系統。</p>
-      <button id="openAdmin">進入管理員專區</button>
+  <hr style="margin:24px 0">
 
-      <div id="adminPanel" style="display:none;margin-top:20px">
-        <h3>平台管理中心</h3>
-        <p>開獎資料管理功能建置中。</p>
-        <p>會員與 VIP 管理功能建置中。</p>
-      </div>
+  <h3>二、開獎資料管理</h3>
+  <p>開獎資料管理功能建置中。</p>
+
+  <hr style="margin:24px 0">
+
+  <h3>三、VIP 管理</h3>
+  <p>VIP 開通、取消及期限設定功能建置中。</p>
+
+  <hr style="margin:24px 0">
+
+  <h3>四、管理員管理</h3>
+  <p>管理員權限管理功能建置中。</p>
+</div>
+</section>
+` : ""}
+
     </section>
   ` : ""}
 
@@ -309,9 +174,114 @@ status.innerHTML = `
 `;
 
 if (isAdmin) {
-  document.getElementById("openAdmin").onclick = () => {
-    document.getElementById("adminPanel").style.display = "block";
+
+
+document.getElementById("openAdmin").onclick = () => {
+document.getElementById("adminPanel").style.display = "block";
+};
+
+document.getElementById("loadMembers").onclick = async () => {
+
+const btn = document.getElementById("loadMembers");
+const area = document.getElementById("memberList");
+
+btn.disabled = true;
+btn.textContent = "正在載入會員資料...";
+area.textContent = "請稍候...";
+
+try {
+
+const snapshot = await getDocs(collection(db, "users"));
+
+const members = snapshot.docs.map(d => ({
+uid: d.id,
+...d.data()
+}));
+
+const vipCount = members.filter(m => m.vip === true).length;
+
+area.replaceChildren();
+
+const summary = document.createElement("p");
+summary.textContent =
+會員總數：$DIL1 人｜VIP：$DIL2 人｜一般會員：$DIL3 人;
+
+      area.appendChild(summary);
+
+if (members.length === 0) {
+        area.appendChild(document.createTextNode("目前沒有會員資料。"));
+        return;
+      }
+
+      const table = document.createElement("table");
+
+table.style.width = "100%";
+      table.style.borderCollapse = "collapse";
+
+      const headers = ["電子郵件", "會員身分", "VIP 狀態", "註冊日期"];
+
+const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+
+headers.forEach(title => {
+        const th = document.createElement("th");
+        th.textContent = title;
+        th.style.padding = "10px";
+        th.style.borderBottom = "1px solid #64748b";
+        th.style.textAlign = "left";
+        headerRow.appendChild(th);
+      });
+
+thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      members.forEach(member => {
+
+        const tr = document.createElement("tr");
+
+const created = member.createdAt?.toDate
+          ? member.createdAt.toDate().toLocaleDateString("zh-TW")
+          : "無資料";
+
+const values = [
+          member.email || "無資料",
+          member.role || "member",
+          member.vip === true ? "VIP" : "一般會員",
+          created
+        ];
+
+values.forEach(value => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          td.style.padding = "10px";
+          td.style.borderBottom = "1px solid #334155";
+          tr.appendChild(td);
+        });
+
+tbody.appendChild(tr);
+      });
+
+table.appendChild(tbody);
+      area.appendChild(table);
+
+    } catch (error) {
+
+      console.error("會員清單讀取失敗：", error);
+
+area.textContent =
+        "讀取失敗：" + error.message;
+
+    } finally {
+
+btn.disabled = false;
+      btn.textContent = "重新載入會員清單";
+
+    }
+
   };
+
 }
 
 
