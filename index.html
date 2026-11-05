@@ -148,6 +148,7 @@ button:disabled {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   serverTimestamp,
   collection,
   getDocs
@@ -409,7 +410,7 @@ onAuthStateChanged(auth, async (user) => {
       table.style.width = "100%";
       table.style.borderCollapse = "collapse";
 
-      const headers = ["電子郵件", "會員身分", "VIP 狀態", "註冊日期"];
+      const headers = ["電子郵件", "會員身分", "VIP 狀態", "註冊日期", "管理操作"];
       const thead = document.createElement("thead");
       const headerRow = document.createElement("tr");
 
@@ -435,23 +436,64 @@ onAuthStateChanged(auth, async (user) => {
           : "無資料";
 
         const values = [
-          member.email || "無資料",
-          member.role || "member",
-          member.vip === true ? "VIP" : "一般會員",
-          created
-        ];
+  member.email || "無資料",
+  member.role || "member",
+  member.vip === true ? "VIP" : "一般會員",
+  created
+];
 
-        values.forEach(value => {
-          const td = document.createElement("td");
-          td.textContent = value;
-          td.style.padding = "10px";
-          td.style.borderBottom = "1px solid #334155";
-          tr.appendChild(td);
-        });
+values.forEach(value => {
+  const td = document.createElement("td");
+  td.textContent = value;
+  td.style.padding = "10px";
+  td.style.borderBottom = "1px solid #334155";
+  tr.appendChild(td);
+});
 
-        tbody.appendChild(tr);
-      });
+// VIP 管理操作欄
+const actionTd = document.createElement("td");
+actionTd.style.padding = "10px";
+actionTd.style.borderBottom = "1px solid #334155";
 
+const vipButton = document.createElement("button");
+
+if (member.vip === true) {
+  vipButton.textContent = "取消 VIP";
+  vipButton.style.background = "#b91c1c";
+} else {
+  vipButton.textContent = "升級 VIP";
+  vipButton.style.background = "#0d9488";
+}
+
+vipButton.onclick = async () => {
+  const action = member.vip === true ? "取消 VIP" : "升級 VIP";
+
+  if (!confirm(`確定要對 ${member.email || "此會員"} 執行「${action}」嗎？`)) {
+    return;
+  }
+
+  vipButton.disabled = true;
+
+  try {
+    await updateDoc(doc(db, "users", member.uid), {
+      vip: member.vip !== true,
+      vipUpdatedAt: serverTimestamp()
+    });
+
+    alert(`${action}成功！`);
+    document.getElementById("loadMembers").click();
+
+  } catch (error) {
+    console.error("VIP 更新失敗：", error);
+    alert("操作失敗：" + error.message);
+    vipButton.disabled = false;
+  }
+};
+
+actionTd.appendChild(vipButton);
+tr.appendChild(actionTd);
+
+tbody.appendChild(tr);
       table.appendChild(tbody);
       area.appendChild(table);
 
