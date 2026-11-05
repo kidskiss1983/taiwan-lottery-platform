@@ -1,0 +1,12 @@
+{
+  "name": "taiwan-lottery-platform",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "import-history": "node scripts/import-history.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.5.0"
+  }
+}
