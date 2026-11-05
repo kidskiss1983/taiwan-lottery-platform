@@ -60,6 +60,7 @@ export {
   getDocs,
   setDoc,
   updateDoc,
+  deleteDoc,
   serverTimestamp
 };
 
