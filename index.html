@@ -1373,7 +1373,6 @@ table.appendChild(tbody);
     } catch (error) {
       console.error("會員清單讀取失敗：", error);
       area.textContent = "讀取失敗：" + error.message;
-}
     } finally {
       btn.disabled = false;
       btn.textContent = "重新載入會員清單";
