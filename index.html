@@ -336,9 +336,27 @@ onAuthStateChanged(auth, async (user) => {
         createdAt: serverTimestamp()
       });
 
-    } else {
+       } else {
 
-      isVIP = userSnap.data().vip === true;
+      const memberData = userSnap.data();
+
+      isVIP = memberData.vip === true;
+
+      // 檢查 VIP 到期日
+      if (isVIP && memberData.vipExpiresAt) {
+
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const day = String(today.getDate()).padStart(2, "0");
+
+        const todayString = `${year}-${month}-${day}`;
+
+        // 到期日當天仍有效，隔天開始失效
+        if (todayString > memberData.vipExpiresAt) {
+          isVIP = false;
+        }
+      }
 
     }
 
