@@ -279,19 +279,43 @@ onAuthStateChanged(auth, async (user) => {
       roleText = "VIP 會員";
     }
 
-    status.innerHTML = `
-      <h3>登入成功</h3>
+   
+status.innerHTML = `
+  <h3>登入成功</h3>
 
-      <p id="memberEmail"></p>
-      <p>目前身分：<strong>${roleText}</strong></p>
-      <p id="verifyStatus"></p>
+  <p id="memberEmail"></p>
+  <p>目前身分：<strong>${roleText}</strong></p>
+  <p id="verifyStatus"></p>
 
-      <button id="resendVerify">
-        重新寄送驗證信
-      </button>
+  <button id="resendVerify">
+    重新寄送驗證信
+  </button>
 
-      <button id="logout">登出</button>
-    `;
+  ${isAdmin ? `
+    <hr style="margin:24px 0;border-color:#475569">
+
+    <section style="padding:16px;background:#0f172a;border-radius:12px">
+      <h3 style="color:#fbbf24">管理員專區</h3>
+      <p>歡迎使用台灣彩券平台管理系統。</p>
+      <button id="openAdmin">進入管理員專區</button>
+
+      <div id="adminPanel" style="display:none;margin-top:20px">
+        <h3>平台管理中心</h3>
+        <p>開獎資料管理功能建置中。</p>
+        <p>會員與 VIP 管理功能建置中。</p>
+      </div>
+    </section>
+  ` : ""}
+
+  <button id="logout">登出</button>
+`;
+
+if (isAdmin) {
+  document.getElementById("openAdmin").onclick = () => {
+    document.getElementById("adminPanel").style.display = "block";
+  };
+}
+
 
     document.getElementById("memberEmail").textContent =
       "帳號：" + (user.email || "");
