@@ -338,7 +338,13 @@ async function saveVipPick(userUid) {
     message.textContent = "請選擇威力彩第二區號碼。";
     return;
   }
-
+if (
+  selection.game === "lotto649" &&
+  selection.specialNumber === null
+) {
+  message.textContent = "請選擇大樂透特別號。";
+  return;
+}
   const pickName = nameInput.value.trim() || "我的自選組合";
 
   try {
@@ -359,6 +365,9 @@ const pickData = {
   name: pickName,
   game: selection.game,
   numbers: [...selection.numbers].sort((a, b) => a - b),
+  specialNumber: selection.game === "lotto649"
+    ? selection.specialNumber
+    : null,
   secondNumber: selection.secondNumber,
   updatedAt: serverTimestamp()
 };
@@ -427,7 +436,12 @@ async function loadVipPicks(userUid) {
       const numbers = document.createElement("p");
       numbers.textContent =
         "第一區：" + (pick.numbers || []).join("、");
-
+if (pick.game === "lotto649") {
+  const special = document.createElement("p");
+  special.textContent = "特別號：" +
+    (pick.specialNumber != null ? pick.specialNumber : "尚未設定");
+  item.appendChild(special);
+}
       item.append(title, game, numbers);
 // 刪除自選組合
 const deleteButton = document.createElement("button");
@@ -465,6 +479,8 @@ editButton.onclick = () => {
   const gameSelect = document.getElementById("vipGame");
   const nameInput = document.getElementById("vipPickName");
   const numberArea = document.getElementById("vipNumberArea");
+  const specialNumberArea =
+  document.getElementById("vipSpecialNumberArea");
   const secondNumberArea = document.getElementById("vipSecondNumberArea");
 
   // 切換彩券種類，重新產生號碼按鈕
@@ -481,7 +497,14 @@ editButton.onclick = () => {
 
     if (button) button.click();
   });
+// 帶入特別號
+  if (pick.game === "lotto649" && pick.specialNumber != null) {
+  const button = [
+    ...specialNumberArea.querySelectorAll("button[data-number]")
+  ].find(btn => Number(btn.dataset.number) === pick.specialNumber);
 
+  if (button) button.click();
+}
   // 帶入威力彩第二區號碼
   if (pick.game === "powerlottery" && pick.secondNumber != null) {
     const button = [...secondNumberArea.querySelectorAll("button[data-number]")]
