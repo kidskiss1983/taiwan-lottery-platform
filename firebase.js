@@ -49,6 +49,7 @@ export {
   signInWithEmailAndPassword,
   signOut,
   sendEmailVerification,
+  sendPasswordResetEmail,
   EmailAuthProvider,
   linkWithCredential,
   collection,
