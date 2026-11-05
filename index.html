@@ -156,7 +156,344 @@ button:disabled {
 } from "./firebase.js";
 
   const status = document.querySelector(".status");
+// VIP 自選號碼功能
+function setupVipNumberPicker() {
+  const gameSelect = document.getElementById("vipGame");
+  const numberArea = document.getElementById("vipNumberArea");
+  const secondArea = document.getElementById("vipSecondArea");
+  const secondNumberArea = document.getElementById("vipSecondNumberArea");
+  const message = document.getElementById("vipPickMessage");
 
+  if (!gameSelect || !numberArea) return;
+
+  const gameRules = {
+    lotto649: {
+      max: 49,
+      count: 6
+    },
+    lotto539: {
+      max: 39,
+      count: 5
+    },
+    powerlottery: {
+      max: 38,
+      count: 6,
+      secondMax: 8
+    }
+  };
+
+  const selection = {
+    game: "lotto649",
+    numbers: [],
+    secondNumber: null
+  };
+
+  window.vipPickSelection = selection;
+
+  function renderNumbers(container, max, selected, area, count) {
+    container.innerHTML = "";
+
+    for (let n = 1; n <= max; n++) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = n;
+      btn.dataset.number = n;
+      btn.dataset.area = area;
+
+      const active = selected.includes(n);
+
+      btn.style.cssText = `
+        width:42px;
+        height:42px;
+        margin:4px;
+        border-radius:50%;
+        border:1px solid #64748b;
+        background:${active ? "#2563eb" : "#1e293b"};
+        color:white;
+        font-weight:bold;
+        cursor:pointer;
+      `;
+
+      container.appendChild(btn);
+    }
+
+    const countText = document.createElement("p");
+    countText.textContent = `已選 ${selected.length} / ${count} 個`;
+    container.appendChild(countText);
+  }
+
+  function render() {
+    const rule = gameRules[selection.game];
+
+    renderNumbers(
+      numberArea,
+      rule.max,
+      selection.numbers,
+      "main",
+      rule.count
+    );
+
+    if (rule.secondMax) {
+      secondArea.style.display = "block";
+
+      renderNumbers(
+        secondNumberArea,
+        rule.secondMax,
+        selection.secondNumber === null
+          ? []
+          : [selection.secondNumber],
+        "second",
+        1
+      );
+    } else {
+      secondArea.style.display = "none";
+    }
+  }
+
+  function handleNumberClick(event) {
+    const btn = event.target.closest("button[data-number]");
+    if (!btn) return;
+
+    const number = Number(btn.dataset.number);
+    const rule = gameRules[selection.game];
+
+    if (btn.dataset.area === "main") {
+      if (selection.numbers.includes(number)) {
+        selection.numbers =
+          selection.numbers.filter(n => n !== number);
+      } else {
+        if (selection.numbers.length >= rule.count) {
+          message.textContent =
+            `這種彩券最多只能選 ${rule.count} 個號碼。`;
+          return;
+        }
+
+        selection.numbers.push(number);
+      }
+    } else {
+      selection.secondNumber =
+        selection.secondNumber === number ? null : number;
+    }
+
+    message.textContent = "";
+    render();
+  }
+
+  numberArea.addEventListener("click", handleNumberClick);
+  secondNumberArea.addEventListener("click", handleNumberClick);
+
+  gameSelect.addEventListener("change", () => {
+    selection.game = gameSelect.value;
+    selection.numbers = [];
+    selection.secondNumber = null;
+    message.textContent = "";
+    render();
+  });
+
+  render();
+}
+  // 儲存 VIP 自選號碼
+async function saveVipPick(userUid) {
+  const selection = window.vipPickSelection;
+  const message = document.getElementById("vipPickMessage");
+  const nameInput = document.getElementById("vipPickName");
+
+  if (!selection || !message) return;
+
+  const gameRules = {
+    lotto649: 6,
+    lotto539: 5,
+    powerlottery: 6
+  };
+
+  const requiredCount = gameRules[selection.game];
+
+  if (selection.numbers.length !== requiredCount) {
+    message.textContent =
+      `請完整選擇 ${requiredCount} 個第一區號碼。`;
+    return;
+  }
+
+  if (
+    selection.game === "powerlottery" &&
+    selection.secondNumber === null
+  ) {
+    message.textContent = "請選擇威力彩第二區號碼。";
+    return;
+  }
+
+  const pickName = nameInput.value.trim() || "我的自選組合";
+
+  try {
+    const picksRef = collection(
+  db,
+  "users",
+  userUid,
+  "vipPicks"
+);
+
+const editingPickId = window.editingVipPickId || null;
+
+const targetPickRef = editingPickId
+  ? doc(db, "users", userUid, "vipPicks", editingPickId)
+  : doc(picksRef);
+
+const pickData = {
+  name: pickName,
+  game: selection.game,
+  numbers: [...selection.numbers].sort((a, b) => a - b),
+  secondNumber: selection.secondNumber,
+  updatedAt: serverTimestamp()
+};
+
+if (!editingPickId) {
+  pickData.createdAt = serverTimestamp();
+}
+
+await setDoc(targetPickRef, pickData);
+
+window.editingVipPickId = null;
+    message.textContent = "自選號碼儲存成功！";
+    nameInput.value = "";
+
+    await loadVipPicks(userUid);
+
+  } catch (error) {
+    console.error("儲存自選號碼失敗：", error);
+    message.textContent = "儲存失敗，請確認 VIP 權限或稍後再試。";
+  }
+}
+  // 載入 VIP 自選號碼清單
+async function loadVipPicks(userUid) {
+  const list = document.getElementById("vipPickList");
+  if (!list) return;
+
+  list.textContent = "正在載入自選組合……";
+
+  try {
+    const picksRef = collection(
+      db,
+      "users",
+      userUid,
+      "vipPicks"
+    );
+
+    const snapshot = await getDocs(picksRef);
+
+    list.replaceChildren();
+
+    if (snapshot.empty) {
+      list.textContent = "目前還沒有儲存任何自選組合。";
+      return;
+    }
+
+    const gameNames = {
+      lotto649: "大樂透",
+      lotto539: "今彩539",
+      powerlottery: "威力彩"
+    };
+
+    snapshot.forEach((pickDoc) => {
+      const pick = pickDoc.data();
+      const item = document.createElement("div");
+
+      item.style.cssText =
+        "padding:12px;margin:10px 0;border:1px solid #64748b;border-radius:8px;";
+
+      const title = document.createElement("h4");
+      title.textContent = pick.name || "我的自選組合";
+
+      const game = document.createElement("p");
+      game.textContent =
+        "彩券：" + (gameNames[pick.game] || pick.game);
+
+      const numbers = document.createElement("p");
+      numbers.textContent =
+        "第一區：" + (pick.numbers || []).join("、");
+
+      item.append(title, game, numbers);
+// 刪除自選組合
+const deleteButton = document.createElement("button");
+deleteButton.textContent = "刪除此組合";
+deleteButton.style.cssText =
+  "margin:8px 0;padding:8px 14px;background:#dc2626;color:white;border:0;border-radius:6px;cursor:pointer;";
+
+deleteButton.onclick = async () => {
+  if (!confirm(`確定要刪除「${pick.name || "我的自選組合"}」嗎？`)) {
+    return;
+  }
+if (window.editingVipPickId === pickDoc.id) {
+  window.editingVipPickId = null;
+}
+  try {
+    await deleteDoc(
+      doc(db, "users", userUid, "vipPicks", pickDoc.id)
+    );
+
+    await loadVipPicks(userUid);
+  } catch (error) {
+    console.error("刪除自選組合失敗：", error);
+    alert("刪除失敗：" + error.message);
+  }
+};
+
+// 編輯自選組合
+const editButton = document.createElement("button");
+editButton.textContent = "編輯組合";
+editButton.style.cssText =
+  "margin:8px 8px 8px 0;padding:8px 14px;background:#2563eb;color:white;border:0;border-radius:6px;cursor:pointer;";
+
+editButton.onclick = () => {
+  window.editingVipPickId = pickDoc.id;
+  const gameSelect = document.getElementById("vipGame");
+  const nameInput = document.getElementById("vipPickName");
+  const numberArea = document.getElementById("vipNumberArea");
+  const secondNumberArea = document.getElementById("vipSecondNumberArea");
+
+  // 切換彩券種類，重新產生號碼按鈕
+  gameSelect.value = pick.game;
+  gameSelect.dispatchEvent(new Event("change"));
+
+  // 帶入組合名稱
+  nameInput.value = pick.name || "";
+
+  // 帶入第一區號碼
+  (pick.numbers || []).forEach(number => {
+    const button = [...numberArea.querySelectorAll("button[data-number]")]
+      .find(btn => Number(btn.dataset.number) === number);
+
+    if (button) button.click();
+  });
+
+  // 帶入威力彩第二區號碼
+  if (pick.game === "powerlottery" && pick.secondNumber != null) {
+    const button = [...secondNumberArea.querySelectorAll("button[data-number]")]
+      .find(btn => Number(btn.dataset.number) === pick.secondNumber);
+
+    if (button) button.click();
+  }
+
+  document.getElementById("vipPickMessage").textContent =
+    "已載入原有組合，修改後請儲存。";
+};
+
+item.appendChild(editButton);
+      item.appendChild(deleteButton);
+      if (pick.game === "powerlottery") {
+        const second = document.createElement("p");
+        second.textContent =
+          "第二區：" + (pick.secondNumber ?? "未選擇");
+        item.appendChild(second);
+      }
+
+      list.appendChild(item);
+    });
+
+  } catch (error) {
+    console.error("載入自選組合失敗：", error);
+    list.textContent = "載入失敗：" + error.message;
+  }
+}
   // 顯示註冊與登入介面
   function showLogin() {
     status.innerHTML = `
@@ -200,11 +537,10 @@ button:disabled {
       <hr>
       <button id="anonymousBtn">訪客登入</button>
 
-      <p id="authMessage" style="color:#fbbf24"></p>
+            <p id="authMessage" style="color:#fbbf24"></p>
     `;
 
     const message = document.getElementById("authMessage");
-
     // 註冊會員
     document.getElementById("registerBtn").onclick = async () => {
       const email = document.getElementById("registerEmail").value.trim();
@@ -319,7 +655,7 @@ onAuthStateChanged(auth, async (user) => {
     const adminRef = doc(db, "admins", user.uid);
     const adminSnap = await getDoc(adminRef);
 
-    const isAdmin = adminSnap.exists();
+    const isAdmin = adminSnap.exists() && user.emailVerified === true;
 
     // 查詢會員資料
     const userRef = doc(db, "users", user.uid);
@@ -431,6 +767,20 @@ onAuthStateChanged(auth, async (user) => {
   }
   <button id="logout">登出</button>
 `;
+    // 啟動 VIP 自選號碼及儲存功能
+if (isVIP || isAdmin) {
+
+  // 顯示可選號碼
+  setupVipNumberPicker();
+
+  // 綁定儲存按鈕
+  document.getElementById("saveVipPick").onclick = () => {
+    saveVipPick(user.uid);
+  };
+
+  // 載入已儲存的自選組合
+  await loadVipPicks(user.uid);
+}
     if (isAdmin) {
   document.getElementById("openAdmin").onclick = () => {
     document.getElementById("adminPanel").style.display = "block";
