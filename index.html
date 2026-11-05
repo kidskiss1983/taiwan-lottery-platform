@@ -94,6 +94,160 @@ button:disabled {
   background: linear-gradient(135deg, #475569, #334155);
   border-color: #64748b;
 }
+    /* ===== 全站資料顯示美化 ===== */
+
+.status {
+  background: linear-gradient(145deg, #1e293b, #111827);
+  border: 1px solid #334155;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  text-align: left;
+}
+
+.status h3 {
+  color: #fbbf24;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #334155;
+}
+
+.status h4 {
+  color: #93c5fd;
+}
+
+.status hr {
+  border: 0;
+  border-top: 1px solid #334155;
+  margin: 22px 0;
+}
+
+.status input,
+.status select {
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 14px;
+  margin: 7px 0;
+  border-radius: 10px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: #f1f5f9;
+  font-size: 15px;
+}
+
+.status input:focus,
+.status select:focus {
+  outline: 2px solid #3b82f6;
+  border-color: #60a5fa;
+}
+
+.status table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 650px;
+  font-size: 14px;
+}
+
+.status th {
+  background: #334155;
+  color: #fbbf24;
+  padding: 13px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.status td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #334155;
+}
+
+.status tr:hover td {
+  background: #263449;
+}
+
+#memberList {
+  overflow-x: auto;
+  border-radius: 12px;
+}
+
+#vipPickList > div {
+  border: 1px solid #475569;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #1e293b, #111827);
+  padding: 18px;
+  margin: 14px 0;
+}
+
+#vipPickList h4 {
+  color: #fbbf24;
+}
+
+#vipNumberArea,
+#vipSpecialNumberArea,
+#vipSecondNumberArea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: flex-start;
+}
+
+/* 可收摺區塊統一樣式 */
+
+.status details {
+  margin: 14px 0;
+  border: 1px solid #475569;
+  border-radius: 12px;
+  background: #172337;
+  overflow: hidden;
+}
+
+.status details summary {
+  padding: 15px 18px;
+  color: #fbbf24;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.status details summary::-webkit-details-marker {
+  display: none;
+}
+
+.status details summary::after {
+  content: "＋";
+  float: right;
+  color: #93c5fd;
+}
+
+.status details[open] summary::after {
+  content: "－";
+}
+
+.status details .details-content {
+  padding: 16px;
+  border-top: 1px solid #334155;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 14px 10px;
+  }
+
+  header {
+    padding: 22px 8px;
+  }
+
+  .status {
+    padding: 16px 12px;
+  }
+
+  .game {
+    padding: 18px;
+  }
+
+  button {
+    max-width: 100%;
+  }
+}
   </style>
 </head>
 <body>
@@ -802,6 +956,9 @@ onAuthStateChanged(auth, async (user) => {
       <p>選擇彩券種類，自行挑選號碼並儲存組合。</p>
 
       <div id="vipPicksPanel">
+  <details>
+    <summary>VIP 自選號碼與組合管理</summary>
+    <div class="details-content">
         <label>選擇彩券</label>
         <select id="vipGame">
           <option value="lotto649">大樂透</option>
@@ -853,8 +1010,11 @@ onAuthStateChanged(auth, async (user) => {
 
         <hr>
         <h3>我的自選組合</h3>
-        <div id="vipPickList"></div>
+              <div id="vipPickList"></div>
       </div>
+    </div>
+  </details>
+</div>
     ` : ""
   }
   ${
@@ -863,10 +1023,14 @@ onAuthStateChanged(auth, async (user) => {
       <h3>管理員專區</h3>
       <button id="openAdmin">開啟管理中心</button>
       <div id="adminPanel" style="display:none;margin-top:20px">
-        <h3>會員管理</h3>
-        <button id="loadMembers">載入會員清單</button>
-        <div id="memberList" style="margin-top:20px"></div>
-      </div>
+  <details>
+    <summary>會員管理與 VIP 資格設定</summary>
+    <div class="details-content">
+      <button id="loadMembers">載入會員清單</button>
+      <div id="memberList" style="margin-top:20px"></div>
+    </div>
+  </details>
+</div>
     ` : ""
   }
   <button id="logout">登出</button>
