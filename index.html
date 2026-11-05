@@ -410,6 +410,32 @@ onAuthStateChanged(auth, async (user) => {
         ...d.data()
       }));
 
+      // 自動檢查並清除已過期的 VIP
+      const today = new Date();
+      const todayString =
+        `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+      for (const member of members) {
+        if (
+          member.vip === true &&
+          typeof member.vipExpiresAt === "string" &&
+          /^\d{4}-\d{2}-\d{2}$/.test(member.vipExpiresAt) &&
+          todayString > member.vipExpiresAt
+        ) {
+          await updateDoc(doc(db, "users", member.uid), {
+            vip: false,
+            vipExpiresAt: null,
+            vipUpdatedAt: serverTimestamp()
+          });
+
+          // 同步更新目前畫面使用的會員資料
+          member.vip = false;
+          member.vipExpiresAt = null;
+
+          console.log("已自動取消過期 VIP：", member.email);
+        }
+      }
+
       const vipCount = members.filter(m => m.vip === true).length;
 
       area.replaceChildren();
