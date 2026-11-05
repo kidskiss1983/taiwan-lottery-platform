@@ -410,7 +410,14 @@ onAuthStateChanged(auth, async (user) => {
       table.style.width = "100%";
       table.style.borderCollapse = "collapse";
 
-      const headers = ["電子郵件", "會員身分", "VIP 狀態", "註冊日期", "管理操作"];
+      const headers = [
+  "電子郵件",
+  "會員身分",
+  "VIP 狀態",
+  "註冊日期",
+  "VIP 到期日",
+  "管理操作"
+];
       const thead = document.createElement("thead");
       const headerRow = document.createElement("tr");
 
