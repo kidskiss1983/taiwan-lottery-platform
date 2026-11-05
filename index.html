@@ -114,197 +114,66 @@
 
   // 顯示註冊與登入介面
   function showLogin() {
-     status.innerHTML = `
-      <h3>登入成功</h3>
+status.innerHTML = `
+  <h3>登入成功</h3>
 
-      <p id="memberEmail"></p>
-      <p>目前身分：<strong>${roleText}</strong></p>
-      <p id="verifyStatus"></p>
+  <p id="memberEmail"></p>
+  <p>目前身分：<strong>${roleText}</strong></p>
+  <p id="verifyStatus"></p>
 
-      <button id="resendVerify">
-        重新寄送驗證信
-      </button>
-
-      ${isAdmin ? `
-        <hr style="margin:24px 0;border-color:#475569">
-
-        <section style="padding:16px;background:#0f172a;border-radius:12px">
-          <h3 style="color:#fbbf24">管理員專區</h3>
-          <p>歡迎使用台灣彩券平台管理系統。</p>
-          <button id="openAdmin">進入管理員專區</button>
-          
-<div id="adminPanel" style="display:none;margin-top:20px">
-  <h3>平台管理中心</h3>
-
-  <hr>
-
-  <h3>一、會員管理</h3>
-  <p>查看平台所有註冊會員及 VIP 狀態。</p>
-
-  <button id="loadMembers">
-    載入會員清單
+  <button id="resendVerify">
+    重新寄送驗證信
   </button>
 
-  <div id="memberList" style="margin-top:20px;overflow-x:auto">
-    <p>尚未載入會員資料。</p>
-  </div>
+  ${isAdmin ? `
+    <hr style="margin:24px 0;border-color:#475569">
 
-  <hr style="margin:24px 0">
+    <section style="padding:16px;background:#0f172a;border-radius:12px">
+      <h3 style="color:#fbbf24">管理員專區</h3>
+      <p>歡迎使用台灣彩券平台管理系統。</p>
 
-  <h3>二、開獎資料管理</h3>
-  <p>開獎資料管理功能建置中。</p>
+      <button id="openAdmin">進入管理員專區</button>
 
-  <hr style="margin:24px 0">
-
-  <h3>三、VIP 管理</h3>
-  <p>VIP 開通、取消及期限設定功能建置中。</p>
-
-  <hr style="margin:24px 0">
-
-  <h3>四、管理員管理</h3>
-  <p>管理員權限管理功能建置中。</p>
-</div>
-</section>
-` : ""}
+      <div id="adminPanel" style="display:none;margin-top:20px">
+        <h3>平台管理中心</h3>
+        <p>開獎資料管理功能建置中。</p>
+        <p>會員與 VIP 管理功能建置中。</p>
+      </div>
+    </section>
+  ` : ""}
 
   <button id="logout">登出</button>
 `;
 
 if (isAdmin) {
-
-
-document.getElementById("openAdmin").onclick = () => {
-document.getElementById("adminPanel").style.display = "block";
-};
-
-document.getElementById("loadMembers").onclick = async () => {
-
-const btn = document.getElementById("loadMembers");
-const area = document.getElementById("memberList");
-
-btn.disabled = true;
-btn.textContent = "正在載入會員資料...";
-area.textContent = "請稍候...";
-
-try {
-
-const snapshot = await getDocs(collection(db, "users"));
-
-const members = snapshot.docs.map(d => ({
-uid: d.id,
-...d.data()
-}));
-
-const vipCount = members.filter(m => m.vip === true).length;
-
-area.replaceChildren();
-
-const summary = document.createElement("p");
-summary.textContent =
-  `會員總數：${members.length} 人｜VIP：${vipCount} 人｜一般會員：${members.length - vipCount} 人`;
-
-area.appendChild(summary);
-
-if (members.length === 0) {
-        area.appendChild(document.createTextNode("目前沒有會員資料。"));
-        return;
-      }
-
-      const table = document.createElement("table");
-
-table.style.width = "100%";
-      table.style.borderCollapse = "collapse";
-
-      const headers = ["電子郵件", "會員身分", "VIP 狀態", "註冊日期"];
-
-const thead = document.createElement("thead");
-      const headerRow = document.createElement("tr");
-
-headers.forEach(title => {
-        const th = document.createElement("th");
-        th.textContent = title;
-        th.style.padding = "10px";
-        th.style.borderBottom = "1px solid #64748b";
-        th.style.textAlign = "left";
-        headerRow.appendChild(th);
-      });
-
-thead.appendChild(headerRow);
-      table.appendChild(thead);
-
-      const tbody = document.createElement("tbody");
-
-      members.forEach(member => {
-
-        const tr = document.createElement("tr");
-
-const created = member.createdAt?.toDate
-          ? member.createdAt.toDate().toLocaleDateString("zh-TW")
-          : "無資料";
-
-const values = [
-          member.email || "無資料",
-          member.role || "member",
-          member.vip === true ? "VIP" : "一般會員",
-          created
-        ];
-
-values.forEach(value => {
-          const td = document.createElement("td");
-          td.textContent = value;
-          td.style.padding = "10px";
-          td.style.borderBottom = "1px solid #334155";
-          tr.appendChild(td);
-        });
-
-tbody.appendChild(tr);
-      });
-
-table.appendChild(tbody);
-      area.appendChild(table);
-
-    } catch (error) {
-
-      console.error("會員清單讀取失敗：", error);
-
-area.textContent =
-        "讀取失敗：" + error.message;
-
-    } finally {
-
-btn.disabled = false;
-      btn.textContent = "重新載入會員清單";
-
-    }
-
+  document.getElementById("openAdmin").onclick = () => {
+    document.getElementById("adminPanel").style.display = "block";
   };
-
 }
 
+document.getElementById("memberEmail").textContent =
+  "帳號：" + (user.email || "");
 
-    document.getElementById("memberEmail").textContent =
-      "帳號：" + (user.email || "");
+document.getElementById("verifyStatus").textContent =
+  user.emailVerified
+    ? "電子郵件已驗證"
+    : "電子郵件尚未驗證";
 
-    document.getElementById("verifyStatus").textContent =
-      user.emailVerified
-        ? "電子郵件已驗證"
-        : "電子郵件尚未驗證";
+document.getElementById("resendVerify").style.display =
+  user.emailVerified ? "none" : "inline-block";
 
-    document.getElementById("resendVerify").style.display =
-      user.emailVerified ? "none" : "inline-block";
+document.getElementById("resendVerify").onclick =
+  async () => {
+    try {
+      await sendEmailVerification(user);
+      alert("驗證信已重新寄出，請檢查電子信箱。");
+    } catch (error) {
+      alert("寄送失敗：" + error.message);
+    }
+  };
 
-    document.getElementById("resendVerify").onclick =
-      async () => {
-        try {
-          await sendEmailVerification(user);
-          alert("驗證信已重新寄出，請檢查電子信箱。");
-        } catch (error) {
-          alert("寄送失敗：" + error.message);
-        }
-      };
-
-    document.getElementById("logout").onclick =
-      () => signOut(auth);
+document.getElementById("logout").onclick =
+  () => signOut(auth);
 
   } catch (error) {
 
