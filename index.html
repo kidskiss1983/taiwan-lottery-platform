@@ -149,6 +149,7 @@ button:disabled {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   serverTimestamp,
   collection,
   getDocs
@@ -375,6 +376,47 @@ onAuthStateChanged(auth, async (user) => {
   <p>目前身分：<strong>${roleText}</strong></p>
   <p id="verifyStatus"></p>
   <button id="resendVerify">重新寄送驗證信</button>
+    ${
+    (isVIP || isAdmin) ? `
+      <hr>
+      <h3>VIP 自選號碼</h3>
+      <p>選擇彩券種類，自行挑選號碼並儲存組合。</p>
+
+      <div id="vipPicksPanel">
+        <label>選擇彩券</label>
+        <select id="vipGame">
+          <option value="lotto649">大樂透</option>
+          <option value="lotto539">今彩539</option>
+          <option value="powerlottery">威力彩</option>
+        </select>
+
+        <p>選擇號碼：</p>
+        <div id="vipNumberArea"></div>
+
+        <div id="vipSecondArea" style="display:none">
+          <p>威力彩第二區：</p>
+          <div id="vipSecondNumberArea"></div>
+        </div>
+
+        <p>組合名稱：</p>
+        <input
+          id="vipPickName"
+          type="text"
+          placeholder="例如：我的幸運號碼"
+        >
+
+        <p>
+          <button id="saveVipPick">儲存自選組合</button>
+        </p>
+
+        <p id="vipPickMessage"></p>
+
+        <hr>
+        <h3>我的自選組合</h3>
+        <div id="vipPickList"></div>
+      </div>
+    ` : ""
+  }
   ${
     isAdmin ? `
       <hr>
