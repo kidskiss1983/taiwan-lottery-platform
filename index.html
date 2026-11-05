@@ -1048,12 +1048,7 @@ if (isVIP || isAdmin) {
   // 載入已儲存的自選組合
   await loadVipPicks(user.uid);
 }
-    if (isAdmin) {
-  document.getElementById("openAdmin").onclick = () => {
-    document.getElementById("adminPanel").style.display = "block";
-  };
-
-  document.getElementById("loadMembers").onclick = async () => {
+   document.getElementById("loadMembers").onclick = async () => {
     const btn = document.getElementById("loadMembers");
     const area = document.getElementById("memberList");
 
