@@ -522,7 +522,7 @@ if (member.vip === true) {
 vipButton.onclick = async () => {
   const isVip = member.vip === true;
   let expiryDate = null;
-
+  let expiryTimestamp = null;
   if (isVip) {
     if (!confirm(`確定要取消 ${member.email} 的 VIP 資格嗎？`)) {
       return;
@@ -650,17 +650,22 @@ vipButton.onclick = async () => {
       expiryDate = `${year}-${month}-${day}`;
     }
   }
-
+// 設定 VIP 到期時間：到期日當天有效，隔天 00:00 失效
+if (!isVip && expiryDate) {
+  expiryTimestamp = new Date(`${expiryDate}T00:00:00`);
+  expiryTimestamp.setDate(expiryTimestamp.getDate() + 1);
+}
   const action = isVip ? "取消 VIP" : "升級 VIP";
 
   vipButton.disabled = true;
 
   try {
-    await updateDoc(doc(db, "users", member.uid), {
-      vip: !isVip,
-      vipExpiresAt: isVip ? null : expiryDate,
-      vipUpdatedAt: serverTimestamp()
-    });
+await updateDoc(doc(db, "users", member.uid), {
+  vip: !isVip,
+  vipExpiresAt: isVip ? null : expiryDate,
+  vipExpiresAtTimestamp: isVip ? null : expiryTimestamp,
+  vipUpdatedAt: serverTimestamp()
+});
 
     alert(`${action}成功！`);
     document.getElementById("loadMembers").click();
