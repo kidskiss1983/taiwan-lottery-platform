@@ -442,11 +442,12 @@ onAuthStateChanged(auth, async (user) => {
           ? member.createdAt.toDate().toLocaleDateString("zh-TW")
           : "無資料";
 
-        const values = [
+   const values = [
   member.email || "無資料",
   member.role || "member",
   member.vip === true ? "VIP" : "一般會員",
-  created
+  created,
+  member.vipExpiresAt || (member.vip === true ? "永久" : "—")
 ];
 
 values.forEach(value => {
