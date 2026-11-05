@@ -161,6 +161,7 @@ button:disabled {
 function setupVipNumberPicker() {
   const gameSelect = document.getElementById("vipGame");
   const numberArea = document.getElementById("vipNumberArea");
+  const numberTitle = document.getElementById("vipNumberTitle");
   const secondArea = document.getElementById("vipSecondArea");
   const secondNumberArea = document.getElementById("vipSecondNumberArea");
   const specialArea = document.getElementById("vipSpecialArea");
@@ -222,7 +223,8 @@ function setupVipNumberPicker() {
 
   function render() {
     const rule = gameRules[selection.game];
-
+numberTitle.textContent =
+  `一般號碼（選擇 ${rule.count} 個）：`;
     renderNumbers(
       numberArea,
       rule.max,
@@ -766,7 +768,7 @@ onAuthStateChanged(auth, async (user) => {
           <option value="powerlottery">威力彩</option>
         </select>
 
-       <p>一般號碼（選擇 6 個）：</p>
+       <p id="vipNumberTitle">一般號碼（選擇 6 個）：</p>
 <div id="vipNumberArea"></div>
 
 <div id="vipSpecialArea" style="display:none">
