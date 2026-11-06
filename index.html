@@ -524,13 +524,69 @@ function renderFilteredRecords() {
         : extraNumber
     ];
 
-    values.forEach(value => {
-      const td = document.createElement("td");
-      td.textContent = String(value);
-      td.style.cssText =
-        "padding:10px;border-bottom:1px solid #334155;text-align:center";
-      tr.appendChild(td);
+   values.forEach((value, index) => {
+  const td = document.createElement("td");
+
+  td.style.cssText =
+    "padding:10px;border-bottom:1px solid #334155;text-align:center";
+
+  // 第三欄：開獎號碼圓球
+  if (index === 2) {
+    const numberArea = document.createElement("div");
+
+    numberArea.style.cssText =
+      "display:flex;flex-wrap:wrap;justify-content:center;gap:5px";
+
+    (item.numbers || []).forEach(number => {
+      const ball = document.createElement("span");
+
+      ball.textContent = number;
+
+      ball.style.cssText = `
+        display:inline-flex;
+        justify-content:center;
+        align-items:center;
+        width:34px;
+        height:34px;
+        border-radius:50%;
+        background:#2563eb;
+        color:white;
+        font-weight:bold;
+        font-size:14px;
+      `;
+
+      numberArea.appendChild(ball);
     });
+
+    td.appendChild(numberArea);
+
+  // 第四欄：特別號或第二區
+  } else if (index === 3 && value !== "—") {
+    const ball = document.createElement("span");
+
+    ball.textContent = value;
+
+    ball.style.cssText = `
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      width:34px;
+      height:34px;
+      border-radius:50%;
+      background:#d97706;
+      color:white;
+      font-weight:bold;
+      font-size:14px;
+    `;
+
+    td.appendChild(ball);
+
+  } else {
+    td.textContent = String(value);
+  }
+
+  tr.appendChild(td);
+});
 
     tbody.appendChild(tr);
   });
