@@ -406,6 +406,12 @@ years.forEach(year => {
 });
 
 filterArea.appendChild(searchInput);
+
+// 大樂透、威力彩才顯示特別號／第二區搜尋
+if (game.extraField) {
+  filterArea.appendChild(specialSearchInput);
+}
+
 filterArea.appendChild(yearSelect);
 area.appendChild(filterArea);
 
