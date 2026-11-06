@@ -47,7 +47,7 @@ jobs:
 
           console.log("Firebase Secret 格式及專案 ID 驗證成功");
           NODE
-           - name: Import lottery history
+      - name: Import lottery history
         if: ${{ inputs.validate_only == false }}
         run: npm run import-history
         env:
