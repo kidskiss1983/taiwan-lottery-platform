@@ -24,6 +24,8 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+      - name: Check JavaScript syntax
+        run: node --check scripts/import-history.mjs
       - name: Validate Firebase credentials
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
