@@ -437,6 +437,34 @@ wrapper.style.cssText = "overflow-x:auto";
 wrapper.appendChild(table);
 area.appendChild(wrapper);
 
+// ================================
+// 歷史紀錄搜尋、篩選與分頁
+// ================================
+
+const pageSize = 20;
+let currentPage = 1;
+
+// 分頁控制區
+const pagination = document.createElement("div");
+pagination.style.cssText =
+  "display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;margin:20px 0";
+
+const prevButton = document.createElement("button");
+prevButton.textContent = "上一頁";
+
+const pageInfo = document.createElement("span");
+
+const nextButton = document.createElement("button");
+nextButton.textContent = "下一頁";
+
+[prevButton, nextButton].forEach(button => {
+  button.style.cssText =
+    "padding:9px 16px;border:1px solid #64748b;border-radius:8px;background:#334155;color:white;cursor:pointer";
+});
+
+pagination.append(prevButton, pageInfo, nextButton);
+area.appendChild(pagination);
+
 // 依搜尋條件更新紀錄
 function renderFilteredRecords() {
   const keyword = searchInput.value.trim().toLowerCase();
@@ -465,9 +493,22 @@ function renderFilteredRecords() {
     return matchesKeyword && matchesYear;
   });
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filtered.length / pageSize)
+  );
+
+  currentPage = Math.min(currentPage, totalPages);
+
+  const startIndex = (currentPage - 1) * pageSize;
+  const pageRecords = filtered.slice(
+    startIndex,
+    startIndex + pageSize
+  );
+
   tbody.innerHTML = "";
 
-  filtered.forEach(item => {
+  pageRecords.forEach(item => {
     const tr = document.createElement("tr");
 
     const extraNumber = game.extraField
@@ -494,14 +535,57 @@ function renderFilteredRecords() {
     tbody.appendChild(tr);
   });
 
+  const firstRecord = filtered.length
+    ? startIndex + 1
+    : 0;
+
+  const lastRecord = Math.min(
+    startIndex + pageSize,
+    filtered.length
+  );
+
   resultCount.textContent =
-    "搜尋結果：" + filtered.length + " 期";
+    `搜尋結果：${filtered.length} 期（顯示第 ${firstRecord}～${lastRecord} 筆）`;
+
+  pageInfo.textContent =
+    `第 ${currentPage} / ${totalPages} 頁`;
+
+  prevButton.disabled = currentPage <= 1;
+  nextButton.disabled = currentPage >= totalPages;
+
+  prevButton.style.opacity =
+    prevButton.disabled ? "0.4" : "1";
+
+  nextButton.style.opacity =
+    nextButton.disabled ? "0.4" : "1";
 }
 
-searchInput.addEventListener("input", renderFilteredRecords);
-yearSelect.addEventListener("change", renderFilteredRecords);
+// 上一頁
+prevButton.onclick = () => {
+  if (currentPage > 1) {
+    currentPage--;
+    renderFilteredRecords();
+  }
+};
 
-// 初次顯示全部紀錄
+// 下一頁
+nextButton.onclick = () => {
+  currentPage++;
+  renderFilteredRecords();
+};
+
+// 搜尋或切換年份時回到第一頁
+searchInput.addEventListener("input", () => {
+  currentPage = 1;
+  renderFilteredRecords();
+});
+
+yearSelect.addEventListener("change", () => {
+  currentPage = 1;
+  renderFilteredRecords();
+});
+
+// 初次顯示
 renderFilteredRecords();
 
   } catch (error) {
