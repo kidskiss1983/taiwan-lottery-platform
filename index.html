@@ -330,7 +330,8 @@ button:disabled {
   // ================================
 // 三大彩券歷史開獎紀錄
 // ================================
-
+// 記錄目前展開的彩券
+let currentHistoryGame = null;
 async function loadDrawHistory(game) {
   const area = document.getElementById("drawHistory");
 
