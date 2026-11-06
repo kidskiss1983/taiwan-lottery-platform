@@ -430,29 +430,41 @@ async function loadDrawHistory(game) {
   }
 }
 
-// 三個彩券按鈕
-document.getElementById("showLotto649").onclick = () => {
-  loadDrawHistory({
-    name: "大樂透",
-    collection: "draws_lotto649",
-    extraField: "specialNumber"
-  });
-};
+// 三大彩券按鈕：再次點擊即可收摺
+function toggleDrawHistory(buttonId, game) {
+  const area = document.getElementById("drawHistory");
 
-document.getElementById("showLotto539").onclick = () => {
-  loadDrawHistory({
-    name: "今彩539",
-    collection: "draws_lotto539"
-  });
-};
+  document.getElementById(buttonId).onclick = () => {
 
-document.getElementById("showPowerLottery").onclick = () => {
-  loadDrawHistory({
-    name: "威力彩",
-    collection: "draws_powerlottery",
-    extraField: "secondNumber"
-  });
-};
+    // 再按一次目前的按鈕，就收摺
+    if (currentHistoryGame === game.collection) {
+      currentHistoryGame = null;
+      area.innerHTML = "<p>請選擇要查看的彩券。</p>";
+      return;
+    }
+
+    // 展開新選擇的彩券
+    currentHistoryGame = game.collection;
+    loadDrawHistory(game);
+  };
+}
+
+toggleDrawHistory("showLotto649", {
+  name: "大樂透",
+  collection: "draws_lotto649",
+  extraField: "specialNumber"
+});
+
+toggleDrawHistory("showLotto539", {
+  name: "今彩539",
+  collection: "draws_lotto539"
+});
+
+toggleDrawHistory("showPowerLottery", {
+  name: "威力彩",
+  collection: "draws_powerlottery",
+  extraField: "secondNumber"
+});
 // VIP 自選號碼功能
 
 function setupVipNumberPicker() {
