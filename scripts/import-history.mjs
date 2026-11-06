@@ -39,7 +39,43 @@ const games = [
     secondField: "secondNumber"
   }
 ];
+async function testGameApi(game) {
+  console.log(`\n測試官方 API：${game.name}`);
 
+  const month = "2026-10";
+  const pageNum = 1;
+  const pageSize = 5;
+
+  const url =
+    `https://api.taiwanlottery.com/TLCAPIWeB/Lottery/${game.endpoint}` +
+    `?period=&month=${month}&pageNum=${pageNum}&pageSize=${pageSize}`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(
+      `${game.name} API 測試失敗：HTTP ${response.status}`
+    );
+  }
+
+  const result = await response.json();
+  const records = result.content?.[game.key];
+
+  if (!Array.isArray(records)) {
+    throw new Error(`${game.name} API 回傳格式錯誤`);
+  }
+
+  console.log(`${game.name} API 測試成功`);
+  console.log(`取得期數：${records.length}`);
+
+  if (records.length > 0) {
+    console.log("最新測試資料：", {
+      period: records[0].period,
+      lotteryDate: records[0].lotteryDate,
+      drawNumberSize: records[0].drawNumberSize
+    });
+  }
+}
 async function importGame(game) {
   console.log(`\n開始匯入：${game.name}`);
 
@@ -166,8 +202,14 @@ async function main() {
 
   console.log("\n2026 年歷史開獎資料匯入全部完成！");
 }
+async function testAllApis() {
+  for (const game of games) {
+    await testGameApi(game);
+  }
 
-main().catch(error => {
-  console.error("歷史資料匯入失敗：", error);
+  console.log("\n三種彩券官方 API 測試全部完成！");
+}
+testAllApis().catch(error => {
+  console.error("官方 API 測試失敗：", error);
   process.exit(1);
 });
