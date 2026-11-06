@@ -95,8 +95,11 @@ async function testGameApi(game) {
     });
   }
 }
+
 async function importGame(game) {
-  // 匯入前先檢查既有資料，保留所有 TEST 測試文件
+  // 預設唯讀預覽，只有明確設定 PREVIEW_ONLY=false 才會寫入
+  const previewOnly = process.env.PREVIEW_ONLY !== "false";
+
   const existingSnapshot = await checkExistingDraws(game);
 
   const existingPeriods = new Set(
@@ -105,9 +108,10 @@ async function importGame(game) {
     )
   );
 
-  console.log(`\n開始匯入：${game.name}`);
+  console.log(`\n開始${previewOnly ? "預覽" : "正式匯入"}：${game.name}`);
 
   let total = 0;
+  let skipped = 0;
   const pageSize = 50;
 
   for (let month = 1; month <= 11; month++) {
@@ -141,95 +145,96 @@ async function importGame(game) {
       if (records.length === 0) break;
 
       const batch = db.batch();
-let pageAdded = 0;
-for (const draw of records) {
-  const period = String(draw.period);
+      let pageAdded = 0;
+      let pageSkipped = 0;
 
-  // 跳過所有已存在的期數，包括 TEST001
-  if (existingPeriods.has(period)) {
-    console.log(`跳過既有資料：${game.name} ${period}`);
-    continue;
-  }
+      for (const draw of records) {
+        const period = String(draw.period);
 
-  const raw = draw.drawNumberSize;
+        // 已存在的期數一律跳過
+        if (existingPeriods.has(period)) {
+          console.log(`跳過既有資料：${game.name} ${period}`);
+          skipped++;
+          pageSkipped++;
+          continue;
+        }
 
-  if (
-    !Array.isArray(raw) ||
-    raw.length !== game.mainCount +
-      (game.specialField || game.secondField ? 1 : 0)
-  ) {
-    throw new Error(
-      `${game.name} 第 ${period} 期號碼數量錯誤`
-    );
-  }
+        const raw = draw.drawNumberSize;
 
-  const numbers = raw.slice(0, game.mainCount);
-  const extraNumber = raw[game.mainCount];
+        if (
+          !Array.isArray(raw) ||
+          raw.length !== game.mainCount +
+            (game.specialField || game.secondField ? 1 : 0)
+        ) {
+          throw new Error(
+            `${game.name} 第 ${period} 期號碼數量錯誤`
+          );
+        }
 
-  if (
-    new Set(numbers).size !== game.mainCount ||
-    numbers.some(n =>
-      !Number.isInteger(n) ||
-      n < 1 ||
-      n > game.maxNumber
-    )
-  ) {
-    throw new Error(
-      `${game.name} 第 ${period} 期一般號碼不合法`
-    );
-  }
+        const numbers = raw.slice(0, game.mainCount);
+        const extraNumber = raw[game.mainCount];
 
-  if (
-    extraNumber !== undefined &&
-    (
-      !Number.isInteger(extraNumber) ||
-      extraNumber < 1 ||
-      extraNumber > (game.specialField ? 49 : 8)
-    )
-  ) {
-    throw new Error(
-      `${game.name} 第 ${period} 期特別號／第二區不合法`
-    );
-  }
+        if (
+          new Set(numbers).size !== game.mainCount ||
+          numbers.some(n =>
+            !Number.isInteger(n) ||
+            n < 1 ||
+            n > game.maxNumber
+          )
+        ) {
+          throw new Error(
+            `${game.name} 第 ${period} 期一般號碼不合法`
+          );
+        }
 
-  const data = {
-    period,
-    date: draw.lotteryDate.split("T")[0],
-    numbers: [...numbers].sort((a, b) => a - b),
-    importedAt:
-      admin.firestore.FieldValue.serverTimestamp()
-  };
+        if (
+          extraNumber !== undefined &&
+          (
+            !Number.isInteger(extraNumber) ||
+            extraNumber < 1 ||
+            extraNumber > (game.specialField ? 49 : 8)
+          )
+        ) {
+          throw new Error(
+            `${game.name} 第 ${period} 期特別號／第二區不合法`
+          );
+        }
 
-  if (game.specialField) {
-    data.specialNumber = extraNumber;
-  }
+        const data = {
+          period,
+          date: draw.lotteryDate.split("T")[0],
+          numbers: [...numbers].sort((a, b) => a - b),
+          importedAt:
+            admin.firestore.FieldValue.serverTimestamp()
+        };
 
-  if (game.secondField) {
-    data.secondNumber = extraNumber;
-  }
+        if (game.specialField) {
+          data.specialNumber = extraNumber;
+        }
 
-  const ref = db
-    .collection(game.collection)
-    .doc(period);
+        if (game.secondField) {
+          data.secondNumber = extraNumber;
+        }
 
-  batch.create(ref, data);
+        const ref = db
+          .collection(game.collection)
+          .doc(period);
 
- existingPeriods.add(period);
- total++;
- pageAdded++;
-}
+        batch.create(ref, data);
 
-      if (pageAdded > 0) {
-  await batch.commit();
-}
+        existingPeriods.add(period);
+        total++;
+        pageAdded++;
+      }
 
-console.log(
-  `${monthString} 第 ${pageNum} 頁：取得 ${records.length} 期，新增 ${pageAdded} 期`
-);
-
+      // 唯讀預覽不提交 Firestore 批次
+      if (!previewOnly && pageAdded > 0) {
+        await batch.commit();
+      }
 
       console.log(
-        `${monthString} 第 ${pageNum} 頁：${records.length} 期`
+        `${monthString} 第 ${pageNum} 頁：取得 ${records.length} 期，` +
+        `預計新增 ${pageAdded} 期，跳過 ${pageSkipped} 期`
       );
 
       if (records.length < pageSize) break;
@@ -238,8 +243,11 @@ console.log(
     }
   }
 
-  console.log(`${game.name} 匯入完成，共 ${total} 期`);
+  console.log(`\n${game.name}${previewOnly ? "預覽" : "匯入"}完成`);
+  console.log(`預計新增／實際新增：${total} 期`);
+  console.log(`跳過既有資料：${skipped} 期`);
 }
+
 async function main() {
   for (const game of games) {
     await importGame(game);
