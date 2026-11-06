@@ -470,36 +470,45 @@ function renderFilteredRecords() {
   const keyword = searchInput.value.trim().toLowerCase();
   const selectedYear = yearSelect.value;
 
-  const filtered = records.filter(item => {
-// 只搜尋實際開獎號碼，不搜尋日期及期別
-const drawNumbers = (item.numbers || [])
-  .map(number => String(number));
+const filtered = records.filter(item => {
 
-const extraNumber = game.extraField
-  ? item[game.extraField]
-  : null;
+  // 開獎日期，只用於年份篩選
+  const date = String(item.date || "");
 
-if (
-  extraNumber !== null &&
-  extraNumber !== undefined
-) {
-  drawNumbers.push(String(extraNumber));
-}
+  // 只搜尋實際開獎號碼
+  const drawNumbers = (item.numbers || [])
+    .map(number => String(number));
 
-// 支援輸入一個或多個號碼，以空格、逗號分隔
-const keywords = keyword
-  .split(/[\s,，、]+/)
-  .filter(Boolean);
+  // 加入特別號或威力彩第二區
+  const extraNumber = game.extraField
+    ? item[game.extraField]
+    : null;
 
-const matchesKeyword =
-  keywords.length === 0 ||
-  keywords.every(number => drawNumbers.includes(number));
+  if (
+    extraNumber !== null &&
+    extraNumber !== undefined
+  ) {
+    drawNumbers.push(String(extraNumber));
+  }
 
-    const matchesYear =
-      !selectedYear || date.startsWith(selectedYear);
+  // 支援多個號碼，以空格、逗號分隔
+  const keywords = keyword
+    .split(/[\s,，、]+/)
+    .filter(Boolean);
 
-    return matchesKeyword && matchesYear;
-  });
+  // 必須完整符合號碼，不搜尋日期或期別
+  const matchesKeyword =
+    keywords.length === 0 ||
+    keywords.every(number =>
+      drawNumbers.includes(number)
+    );
+
+  // 年份獨立篩選
+  const matchesYear =
+    !selectedYear || date.startsWith(selectedYear);
+
+  return matchesKeyword && matchesYear;
+});
 
   const totalPages = Math.max(
     1,
