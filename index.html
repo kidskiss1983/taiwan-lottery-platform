@@ -311,6 +311,70 @@ button:disabled {
   }
 }
 
+/* ===== 統計結果美化 ===== */
+
+.stats-result {
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #172338;
+  border: 1px solid #334155;
+}
+
+.stats-result h3 {
+  color: #93c5fd;
+  margin-bottom: 18px;
+}
+
+.stats-result h4 {
+  margin-top: 24px;
+  margin-bottom: 12px;
+  color: #f8fafc;
+}
+
+.stats-number-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.stats-number {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  min-height: 58px;
+  padding: 7px;
+  border-radius: 12px;
+  color: white;
+  font-weight: bold;
+}
+
+.stats-number small {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: normal;
+}
+
+.stats-number.hot {
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+}
+
+.stats-number.cold {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+}
+
+.stats-note {
+  margin-top: 24px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #263449;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
   </style>
 </head>
 <body>
