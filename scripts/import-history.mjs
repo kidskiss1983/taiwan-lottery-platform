@@ -227,10 +227,23 @@ async function importGame(game) {
         pageAdded++;
       }
 
-      // 唯讀預覽不提交 Firestore 批次
-      if (!previewOnly && pageAdded > 0) {
-        await batch.commit();
-      }
+    // 唯讀預覽不提交 Firestore 批次
+if (!previewOnly && pageAdded > 0) {
+  try {
+    await batch.commit();
+
+    console.log(
+      `成功寫入：${game.name} ${monthString} 第 ${pageNum} 頁`
+    );
+
+  } catch (error) {
+    throw new Error(
+      `${game.name} ${monthString} 第 ${pageNum} 頁寫入失敗。` +
+      `為避免覆蓋既有文件，請檢查資料後重新執行。` +
+      `原因：${error.message}`
+    );
+  }
+}
 
       console.log(
         `${monthString} 第 ${pageNum} 頁：取得 ${records.length} 期，` +
