@@ -49,9 +49,9 @@ jobs:
 
           console.log("Firebase Secret 格式及專案 ID 驗證成功");
           NODE
-      - name: Preview lottery history
+      - name: Import lottery history
         if: ${{ inputs.validate_only == false }}
         run: npm run import-history
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          PREVIEW_ONLY: "true"
+          PREVIEW_ONLY: "false"
