@@ -1167,8 +1167,30 @@ async function loadStatistics(game) {
 // 三大彩券統計分析按鈕
 // ================================
 
+
+// ================================
+// 三大彩券統計分析按鈕（可再次點擊收摺）
+// ================================
+
+let currentStatsGame = null;
+
+function toggleStatistics(game, buttonId) {
+  const area = document.getElementById("statisticsArea");
+
+  // 如果再次點擊目前已開啟的彩券，就收起結果
+  if (currentStatsGame === game.collection) {
+    currentStatsGame = null;
+    area.innerHTML = "";
+    return;
+  }
+
+  // 切換到另一种彩票
+  currentStatsGame = game.collection;
+  loadStatistics(game);
+}
+
 document.getElementById("statsLotto649").onclick = () => {
-  loadStatistics({
+  toggleStatistics({
     name: "大樂透",
     collection: "draws_lotto649",
     mainCount: 6,
@@ -1177,7 +1199,7 @@ document.getElementById("statsLotto649").onclick = () => {
 };
 
 document.getElementById("statsLotto539").onclick = () => {
-  loadStatistics({
+  toggleStatistics({
     name: "今彩539",
     collection: "draws_lotto539",
     mainCount: 5,
@@ -1186,13 +1208,14 @@ document.getElementById("statsLotto539").onclick = () => {
 };
 
 document.getElementById("statsPowerLottery").onclick = () => {
-  loadStatistics({
+  toggleStatistics({
     name: "威力彩",
     collection: "draws_powerlottery",
     mainCount: 6,
     maxNumber: 38
   });
 };
+
 
 // 三大彩券按鈕：再次點擊收摺，並更新按鈕文字
 const historyButtonLabels = {
