@@ -276,9 +276,26 @@ button:disabled {
       </article>
     </section>
 
+    </section>
+
+    <!-- 開獎紀錄入口 -->
     <section class="status">
-      <p>平台首頁已建立</p>
-      <p>開獎資料與會員功能建置中</p>
+      <h3>歷史開獎紀錄</h3>
+      <p>查詢三大彩券官方歷史開獎資料。</p>
+
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <button id="showLotto649">大樂透開獎紀錄</button>
+        <button id="showLotto539">今彩539開獎紀錄</button>
+        <button id="showPowerLottery">威力彩開獎紀錄</button>
+      </div>
+
+      <div id="drawHistory" style="margin-top:20px">
+        <p>請選擇要查看的彩券。</p>
+      </div>
+    </section>
+
+    <section class="status" id="memberStatus">
+      <p>會員登入與管理功能</p>
     </section>
 
     <footer>
@@ -309,7 +326,132 @@ button:disabled {
   getDocs
 } from "./firebase.js";
 
-  const status = document.querySelector(".status");
+  const status = document.getElementById("memberStatus");
+  // ================================
+// 三大彩券歷史開獎紀錄
+// ================================
+
+async function loadDrawHistory(game) {
+  const area = document.getElementById("drawHistory");
+
+  area.textContent = "正在讀取開獎資料……";
+
+  try {
+    const snapshot = await getDocs(collection(db, game.collection));
+
+    // 排除 TEST 測試資料，並依日期由新到舊排序
+    const records = snapshot.docs
+      .map(doc => doc.data())
+      .filter(item =>
+        item.period &&
+        !String(item.period).startsWith("TEST")
+      )
+      .sort((a, b) => {
+        const dateCompare = String(b.date || "")
+          .localeCompare(String(a.date || ""));
+
+        return dateCompare ||
+          String(b.period).localeCompare(String(a.period));
+      });
+
+    area.innerHTML = "";
+
+    const heading = document.createElement("h3");
+    heading.textContent = game.name + "歷史開獎紀錄（" +
+      records.length + " 期）";
+    area.appendChild(heading);
+
+    if (records.length === 0) {
+      area.textContent = "目前沒有可顯示的開獎資料。";
+      return;
+    }
+
+    const table = document.createElement("table");
+    table.style.cssText =
+      "width:100%;border-collapse:collapse;margin-top:12px";
+
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+
+    ["期別", "開獎日期", "開獎號碼", "特別號／第二區"]
+      .forEach(label => {
+        const th = document.createElement("th");
+        th.textContent = label;
+        th.style.cssText =
+          "padding:10px;border-bottom:1px solid #475569;text-align:center";
+        headerRow.appendChild(th);
+      });
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+
+    records.forEach(item => {
+      const tr = document.createElement("tr");
+
+      const extraNumber = game.extraField
+        ? item[game.extraField]
+        : "";
+
+      const values = [
+        item.period,
+        item.date || "",
+        (item.numbers || []).join("、"),
+        extraNumber === undefined || extraNumber === null
+          ? "—"
+          : extraNumber
+      ];
+
+      values.forEach(value => {
+        const td = document.createElement("td");
+        td.textContent = String(value);
+        td.style.cssText =
+          "padding:10px;border-bottom:1px solid #334155;text-align:center";
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText = "overflow-x:auto";
+    wrapper.appendChild(table);
+    area.appendChild(wrapper);
+
+  } catch (error) {
+    console.error("開獎紀錄讀取失敗：", error);
+    area.textContent =
+      "讀取失敗：" + error.message +
+      "。請確認已登入會員或訪客帳號。";
+  }
+}
+
+// 三個彩券按鈕
+document.getElementById("showLotto649").onclick = () => {
+  loadDrawHistory({
+    name: "大樂透",
+    collection: "draws_lotto649",
+    extraField: "specialNumber"
+  });
+};
+
+document.getElementById("showLotto539").onclick = () => {
+  loadDrawHistory({
+    name: "今彩539",
+    collection: "draws_lotto539"
+  });
+};
+
+document.getElementById("showPowerLottery").onclick = () => {
+  loadDrawHistory({
+    name: "威力彩",
+    collection: "draws_powerlottery",
+    extraField: "secondNumber"
+  });
+};
 // VIP 自選號碼功能
 
 function setupVipNumberPicker() {
