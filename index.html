@@ -430,21 +430,36 @@ async function loadDrawHistory(game) {
   }
 }
 
-// 三大彩券按鈕：再次點擊即可收摺
+// 三大彩券按鈕：再次點擊收摺，並更新按鈕文字
+const historyButtonLabels = {
+  showLotto649: "大樂透開獎紀錄",
+  showLotto539: "今彩539開獎紀錄",
+  showPowerLottery: "威力彩開獎紀錄"
+};
+
 function toggleDrawHistory(buttonId, game) {
   const area = document.getElementById("drawHistory");
+  const button = document.getElementById(buttonId);
 
-  document.getElementById(buttonId).onclick = () => {
+  button.onclick = () => {
 
     // 再按一次目前的按鈕，就收摺
     if (currentHistoryGame === game.collection) {
       currentHistoryGame = null;
       area.innerHTML = "<p>請選擇要查看的彩券。</p>";
+      button.textContent = historyButtonLabels[buttonId];
       return;
     }
 
+    // 先恢復所有按鈕原本的文字
+    Object.entries(historyButtonLabels).forEach(([id, label]) => {
+      document.getElementById(id).textContent = label;
+    });
+
     // 展開新選擇的彩券
     currentHistoryGame = game.collection;
+    button.textContent = "收起" + game.name + "紀錄";
+
     loadDrawHistory(game);
   };
 }
