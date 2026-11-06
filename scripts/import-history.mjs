@@ -209,7 +209,7 @@ async function testAllApis() {
 
   console.log("\n三種彩券官方 API 測試全部完成！");
 }
-testAllApis().catch(error => {
-  console.error("官方 API 測試失敗：", error);
+main().catch(error => {
+  console.error("歷史資料匯入失敗：", error);
   process.exit(1);
 });
