@@ -248,6 +248,69 @@ button:disabled {
     max-width: 100%;
   }
 }
+    
+/* ===== 統計分析按鈕美化 ===== */
+.statistics-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.stats-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 115px;
+  padding: 16px 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 14px;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stats-btn span:first-child {
+  font-size: 25px;
+}
+
+.stats-btn small {
+  color: rgba(255,255,255,0.85);
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.stats-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.stats-blue {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+}
+
+.stats-green {
+  background: linear-gradient(135deg, #059669, #065f46);
+}
+
+.stats-purple {
+  background: linear-gradient(135deg, #9333ea, #581c87);
+}
+
+@media (max-width: 600px) {
+  .statistics-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-btn {
+    min-height: 90px;
+  }
+}
+
   </style>
 </head>
 <body>
@@ -293,6 +356,38 @@ button:disabled {
         <p>請選擇要查看的彩券。</p>
       </div>
     </section>
+
+
+<!-- 統計分析入口 -->
+<section class="status" id="statisticsSection">
+  <h3>📊 歷史統計分析</h3>
+  <p>依據官方歷史開獎資料，分析各彩券號碼分布與趨勢。</p>
+
+  <div class="statistics-buttons">
+    <button id="statsLotto649" class="stats-btn stats-blue">
+      <span>🎱</span>
+      <span>大樂透統計</span>
+      <small>49選6・歷史號碼分析</small>
+    </button>
+
+    <button id="statsLotto539" class="stats-btn stats-green">
+      <span>🍀</span>
+      <span>今彩539統計</span>
+      <small>39選5・歷史號碼分析</small>
+    </button>
+
+    <button id="statsPowerLottery" class="stats-btn stats-purple">
+      <span>⚡</span>
+      <span>威力彩統計</span>
+      <small>第一區與第二區分析</small>
+    </button>
+  </div>
+
+  <div id="statisticsArea" style="margin-top:20px">
+    <p>請選擇要分析的彩券。</p>
+  </div>
+</section>
+
 
     <section class="status" id="memberStatus">
       <p>會員登入與管理功能</p>
