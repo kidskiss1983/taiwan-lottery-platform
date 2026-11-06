@@ -374,7 +374,7 @@ filterArea.style.cssText =
 
 const searchInput = document.createElement("input");
 searchInput.type = "text";
-searchInput.placeholder = "輸入期別或開獎號碼搜尋";
+searchInput.placeholder = "輸入開獎號碼，例如 22";
 searchInput.style.cssText =
   "flex:1;min-width:180px;padding:10px;border-radius:8px;border:1px solid #64748b;background:#1e293b;color:white";
 
@@ -471,21 +471,29 @@ function renderFilteredRecords() {
   const selectedYear = yearSelect.value;
 
   const filtered = records.filter(item => {
-    const date = String(item.date || "");
-    const numbers = (item.numbers || []).join(" ");
-    const extra = game.extraField
-      ? String(item[game.extraField] ?? "")
-      : "";
+// 只搜尋實際開獎號碼，不搜尋日期及期別
+const drawNumbers = (item.numbers || [])
+  .map(number => String(number));
 
-    const searchText = [
-      item.period,
-      date,
-      numbers,
-      extra
-    ].join(" ").toLowerCase();
+const extraNumber = game.extraField
+  ? item[game.extraField]
+  : null;
 
-    const matchesKeyword =
-      !keyword || searchText.includes(keyword);
+if (
+  extraNumber !== null &&
+  extraNumber !== undefined
+) {
+  drawNumbers.push(String(extraNumber));
+}
+
+// 支援輸入一個或多個號碼，以空格、逗號分隔
+const keywords = keyword
+  .split(/[\s,，、]+/)
+  .filter(Boolean);
+
+const matchesKeyword =
+  keywords.length === 0 ||
+  keywords.every(number => drawNumbers.includes(number));
 
     const matchesYear =
       !selectedYear || date.startsWith(selectedYear);
@@ -588,8 +596,100 @@ function renderFilteredRecords() {
   tr.appendChild(td);
 });
 
+    // 加入開獎紀錄
     tbody.appendChild(tr);
-  });
+
+    // 點擊該期紀錄，展開詳細資訊
+    tr.style.cursor = "pointer";
+    tr.title = "點擊查看本期詳細資訊";
+
+    tr.onclick = () => {
+      const nextRow = tr.nextElementSibling;
+
+      // 如果已經展開，再點擊就收摺
+      if (
+        nextRow &&
+        nextRow.dataset.detailRow === "true"
+      ) {
+        nextRow.remove();
+        return;
+      }
+
+      // 建立詳細資訊列
+      const detailRow = document.createElement("tr");
+      detailRow.dataset.detailRow = "true";
+
+      const detailCell = document.createElement("td");
+      detailCell.colSpan = 4;
+
+      detailCell.style.cssText = `
+        padding:16px;
+        background:#1e293b;
+        border-bottom:1px solid #475569;
+      `;
+
+      const mainNumbers = item.numbers || [];
+      const sum = mainNumbers.reduce(
+        (total, number) => total + Number(number), 0
+      );
+
+      const oddCount = mainNumbers.filter(
+        number => Number(number) % 2 === 1
+      ).length;
+
+      const evenCount = mainNumbers.length - oddCount;
+
+      const extraNumber = game.extraField
+        ? item[game.extraField]
+        : null;
+
+      const detailTitle = document.createElement("h4");
+      detailTitle.textContent =
+        item.period + " 開獎詳細資訊";
+
+      const dateText = document.createElement("p");
+      dateText.textContent =
+        "開獎日期：" + (item.date || "未提供");
+
+      const numberText = document.createElement("p");
+      numberText.textContent =
+        "一般號碼：" + mainNumbers.join("、");
+
+      const extraText = document.createElement("p");
+
+      if (game.extraField) {
+        extraText.textContent =
+          (game.name === "大樂透" ? "特別號：" : "第二區：") +
+          (extraNumber ?? "未提供");
+      } else {
+        extraText.textContent = "本期無特別號或第二區";
+      }
+
+      const sumText = document.createElement("p");
+      sumText.textContent = "一般號碼總和：" + sum;
+
+      const oddEvenText = document.createElement("p");
+      oddEvenText.textContent =
+        "奇偶分布：" + oddCount + " 奇 " +
+        "／" + evenCount + " 偶";
+
+      [
+        detailTitle,
+        dateText,
+        numberText,
+        extraText,
+        sumText,
+        oddEvenText
+      ].forEach(element => {
+        element.style.margin = "6px 0";
+        detailCell.appendChild(element);
+      });
+
+      detailRow.appendChild(detailCell);
+
+      // 插入在目前紀錄的下一列
+      tr.after(detailRow);
+    };
 
   const firstRecord = filtered.length
     ? startIndex + 1
