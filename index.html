@@ -367,60 +367,142 @@ async function loadDrawHistory(game) {
       return;
     }
 
-    const table = document.createElement("table");
-    table.style.cssText =
-      "width:100%;border-collapse:collapse;margin-top:12px";
+// 搜尋與年份篩選區
+const filterArea = document.createElement("div");
+filterArea.style.cssText =
+  "display:flex;flex-wrap:wrap;gap:10px;margin:15px 0";
 
-    const thead = document.createElement("thead");
-    const headerRow = document.createElement("tr");
+const searchInput = document.createElement("input");
+searchInput.type = "text";
+searchInput.placeholder = "輸入期別或開獎號碼搜尋";
+searchInput.style.cssText =
+  "flex:1;min-width:180px;padding:10px;border-radius:8px;border:1px solid #64748b;background:#1e293b;color:white";
 
-    ["期別", "開獎日期", "開獎號碼", "特別號／第二區"]
-      .forEach(label => {
-        const th = document.createElement("th");
-        th.textContent = label;
-        th.style.cssText =
-          "padding:10px;border-bottom:1px solid #475569;text-align:center";
-        headerRow.appendChild(th);
-      });
+const yearSelect = document.createElement("select");
+yearSelect.style.cssText =
+  "padding:10px;border-radius:8px;border:1px solid #64748b;background:#1e293b;color:white";
 
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
+const allOption = document.createElement("option");
+allOption.value = "";
+allOption.textContent = "全部年份";
+yearSelect.appendChild(allOption);
 
-    const tbody = document.createElement("tbody");
+// 自動整理資料中存在的年份
+const years = [...new Set(
+  records
+    .map(item => String(item.date || "").slice(0, 4))
+    .filter(year => /^\d{4}$/.test(year))
+)].sort((a, b) => b.localeCompare(a));
 
-    records.forEach(item => {
-      const tr = document.createElement("tr");
+years.forEach(year => {
+  const option = document.createElement("option");
+  option.value = year;
+  option.textContent = year + " 年";
+  yearSelect.appendChild(option);
+});
 
-      const extraNumber = game.extraField
-        ? item[game.extraField]
-        : "";
+filterArea.appendChild(searchInput);
+filterArea.appendChild(yearSelect);
+area.appendChild(filterArea);
 
-      const values = [
-        item.period,
-        item.date || "",
-        (item.numbers || []).join("、"),
-        extraNumber === undefined || extraNumber === null
-          ? "—"
-          : extraNumber
-      ];
+// 結果筆數
+const resultCount = document.createElement("p");
+area.appendChild(resultCount);
 
-      values.forEach(value => {
-        const td = document.createElement("td");
-        td.textContent = String(value);
-        td.style.cssText =
-          "padding:10px;border-bottom:1px solid #334155;text-align:center";
-        tr.appendChild(td);
-      });
+// 建立表格
+const table = document.createElement("table");
+table.style.cssText =
+  "width:100%;border-collapse:collapse;margin-top:12px";
 
-      tbody.appendChild(tr);
+const thead = document.createElement("thead");
+const headerRow = document.createElement("tr");
+
+["期別", "開獎日期", "開獎號碼", "特別號／第二區"]
+  .forEach(label => {
+    const th = document.createElement("th");
+    th.textContent = label;
+    th.style.cssText =
+      "padding:10px;border-bottom:1px solid #475569;text-align:center";
+    headerRow.appendChild(th);
+  });
+
+thead.appendChild(headerRow);
+table.appendChild(thead);
+
+const tbody = document.createElement("tbody");
+table.appendChild(tbody);
+
+const wrapper = document.createElement("div");
+wrapper.style.cssText = "overflow-x:auto";
+wrapper.appendChild(table);
+area.appendChild(wrapper);
+
+// 依搜尋條件更新紀錄
+function renderFilteredRecords() {
+  const keyword = searchInput.value.trim().toLowerCase();
+  const selectedYear = yearSelect.value;
+
+  const filtered = records.filter(item => {
+    const date = String(item.date || "");
+    const numbers = (item.numbers || []).join(" ");
+    const extra = game.extraField
+      ? String(item[game.extraField] ?? "")
+      : "";
+
+    const searchText = [
+      item.period,
+      date,
+      numbers,
+      extra
+    ].join(" ").toLowerCase();
+
+    const matchesKeyword =
+      !keyword || searchText.includes(keyword);
+
+    const matchesYear =
+      !selectedYear || date.startsWith(selectedYear);
+
+    return matchesKeyword && matchesYear;
+  });
+
+  tbody.innerHTML = "";
+
+  filtered.forEach(item => {
+    const tr = document.createElement("tr");
+
+    const extraNumber = game.extraField
+      ? item[game.extraField]
+      : "";
+
+    const values = [
+      item.period,
+      item.date || "",
+      (item.numbers || []).join("、"),
+      extraNumber === undefined || extraNumber === null
+        ? "—"
+        : extraNumber
+    ];
+
+    values.forEach(value => {
+      const td = document.createElement("td");
+      td.textContent = String(value);
+      td.style.cssText =
+        "padding:10px;border-bottom:1px solid #334155;text-align:center";
+      tr.appendChild(td);
     });
 
-    table.appendChild(tbody);
+    tbody.appendChild(tr);
+  });
 
-    const wrapper = document.createElement("div");
-    wrapper.style.cssText = "overflow-x:auto";
-    wrapper.appendChild(table);
-    area.appendChild(wrapper);
+  resultCount.textContent =
+    "搜尋結果：" + filtered.length + " 期";
+}
+
+searchInput.addEventListener("input", renderFilteredRecords);
+yearSelect.addEventListener("change", renderFilteredRecords);
+
+// 初次顯示全部紀錄
+renderFilteredRecords();
 
   } catch (error) {
     console.error("開獎紀錄讀取失敗：", error);
