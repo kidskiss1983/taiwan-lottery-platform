@@ -699,7 +699,7 @@ const filtered = records.filter(item => {
       // 插入在目前紀錄的下一列
       tr.after(detailRow);
     };
-
+  }); // 結束 pageRecords.forEach
   const firstRecord = filtered.length
     ? startIndex + 1
     : 0;
@@ -723,7 +723,7 @@ const filtered = records.filter(item => {
 
   nextButton.style.opacity =
     nextButton.disabled ? "0.4" : "1";
-
+}
 
 // 上一頁
 prevButton.onclick = () => {
