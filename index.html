@@ -377,7 +377,11 @@ searchInput.type = "text";
 searchInput.placeholder = "輸入開獎號碼，例如 22";
 searchInput.style.cssText =
   "flex:1;min-width:180px;padding:10px;border-radius:8px;border:1px solid #64748b;background:#1e293b;color:white";
-
+const specialSearchInput = document.createElement("input");
+specialSearchInput.type = "text";
+specialSearchInput.placeholder = "搜尋特別號";
+specialSearchInput.style.cssText =
+  "flex:1;min-width:140px;padding:10px;border-radius:8px;border:1px solid #f59e0b;background:#1e293b;color:white";
 const yearSelect = document.createElement("select");
 yearSelect.style.cssText =
   "padding:10px;border-radius:8px;border:1px solid #64748b;background:#1e293b;color:white";
@@ -467,29 +471,27 @@ area.appendChild(pagination);
 
 // 依搜尋條件更新紀錄
 function renderFilteredRecords() {
-  const keyword = searchInput.value.trim().toLowerCase();
-  const selectedYear = yearSelect.value;
+const keyword = searchInput.value.trim().toLowerCase();
+const specialKeyword = specialSearchInput.value.trim();
+const selectedYear = yearSelect.value;
 
 const filtered = records.filter(item => {
 
   // 開獎日期，只用於年份篩選
   const date = String(item.date || "");
 
-  // 只搜尋實際開獎號碼
-  const drawNumbers = (item.numbers || [])
-    .map(number => String(number));
+ // 一般號碼：只搜尋第一區
+const drawNumbers = (item.numbers || [])
+  .map(number => String(number));
 
-  // 加入特別號或威力彩第二區
-  const extraNumber = game.extraField
-    ? item[game.extraField]
-    : null;
+// 特別號或第二區：獨立搜尋
+const extraNumber = game.extraField
+  ? String(item[game.extraField] ?? "")
+  : "";
 
-  if (
-    extraNumber !== null &&
-    extraNumber !== undefined
-  ) {
-    drawNumbers.push(String(extraNumber));
-  }
+const matchesSpecial =
+  !specialKeyword ||
+  extraNumber === specialKeyword;
 
   // 支援多個號碼，以空格、逗號分隔
   const keywords = keyword
@@ -497,17 +499,17 @@ const filtered = records.filter(item => {
     .filter(Boolean);
 
   // 必須完整符合號碼，不搜尋日期或期別
-  const matchesKeyword =
-    keywords.length === 0 ||
-    keywords.every(number =>
-      drawNumbers.includes(number)
-    );
+ const matchesKeyword =
+  keywords.length === 0 ||
+  keywords.every(number =>
+    drawNumbers.includes(number)
+  );
 
   // 年份獨立篩選
   const matchesYear =
     !selectedYear || date.startsWith(selectedYear);
 
-  return matchesKeyword && matchesYear;
+  return matchesKeyword && matchesSpecial && matchesYear;
 });
 
   const totalPages = Math.max(
@@ -744,7 +746,10 @@ searchInput.addEventListener("input", () => {
   currentPage = 1;
   renderFilteredRecords();
 });
-
+specialSearchInput.addEventListener("input", () => {
+  currentPage = 1;
+  renderFilteredRecords();
+});
 yearSelect.addEventListener("change", () => {
   currentPage = 1;
   renderFilteredRecords();
