@@ -881,6 +881,7 @@ renderFilteredRecords();
   }
 }
 
+
 // ================================
 // 三大彩券歷史統計分析
 // ================================
@@ -893,7 +894,6 @@ async function loadStatistics(game) {
   try {
     const snapshot = await getDocs(collection(db, game.collection));
 
-    // 排除測試資料，並依日期由新到舊排序
     const records = snapshot.docs
       .map(doc => doc.data())
       .filter(item =>
@@ -915,112 +915,165 @@ async function loadStatistics(game) {
       return;
     }
 
-    // 號碼出現次數
-    const frequency = {};
+    // 統計期數選擇器
+    area.innerHTML = "";
 
-    for (let i = 1; i <= game.maxNumber; i++) {
-      frequency[i] = 0;
-    }
+    const filterArea = document.createElement("div");
+    filterArea.style.cssText =
+      "display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:15px 0";
 
-    let oddCount = 0;
-    let evenCount = 0;
-    let lowCount = 0;
-    let highCount = 0;
-    let totalSum = 0;
+    const label = document.createElement("label");
+    label.textContent = "統計期數：";
+    label.style.fontWeight = "bold";
 
-    records.forEach(record => {
-      record.numbers.forEach(number => {
-        const n = Number(number);
+    const periodSelect = document.createElement("select");
+    periodSelect.style.cssText = `
+      padding:10px 14px;
+      border-radius:8px;
+      border:1px solid #64748b;
+      background:#1e293b;
+      color:white;
+      font-size:15px;
+    `;
 
-        if (!Number.isInteger(n) || n < 1 || n > game.maxNumber) {
-          return;
-        }
-
-        frequency[n]++;
-
-        if (n % 2 === 0) {
-          evenCount++;
-        } else {
-          oddCount++;
-        }
-
-        if (n <= Math.floor(game.maxNumber / 2)) {
-          lowCount++;
-        } else {
-          highCount++;
-        }
-
-        totalSum += n;
-      });
+    [
+      { value: "10", text: "最近 10 期" },
+      { value: "30", text: "最近 30 期" },
+      { value: "50", text: "最近 50 期" },
+      { value: "100", text: "最近 100 期" },
+      { value: "all", text: "全部歷史期數" }
+    ].forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.value;
+      option.textContent = item.text;
+      periodSelect.appendChild(option);
     });
 
-    const averageSum = totalSum / records.length;
+    periodSelect.value = "all";
 
-    const ranking = Object.entries(frequency)
-      .map(([number, count]) => ({
-        number: Number(number),
-        count
-      }))
-      .sort((a, b) =>
-        b.count - a.count || a.number - b.number
-      );
+    filterArea.append(label, periodSelect);
+    area.appendChild(filterArea);
 
-    const hotNumbers = ranking.slice(0, 10);
+    const resultArea = document.createElement("div");
+    area.appendChild(resultArea);
 
-    const coldNumbers = [...ranking]
-      .sort((a, b) =>
-        a.count - b.count || a.number - b.number
-      )
-      .slice(0, 10);
+    function renderStatistics() {
+      const selectedCount = periodSelect.value === "all"
+        ? records.length
+        : Number(periodSelect.value);
 
-    area.innerHTML = `
-      <div class="stats-result">
+      const selectedRecords = records.slice(0, selectedCount);
 
-        <h3>${game.name} 歷史統計結果</h3>
+      const frequency = {};
 
-        <p>統計期數：
-          <strong>${records.length} 期</strong>
-        </p>
+      for (let i = 1; i <= game.maxNumber; i++) {
+        frequency[i] = 0;
+      }
 
-        <p>奇數總次數：${oddCount} 次</p>
-        <p>偶數總次數：${evenCount} 次</p>
+      let oddCount = 0;
+      let evenCount = 0;
+      let lowCount = 0;
+      let highCount = 0;
+      let totalSum = 0;
 
-        <p>小號總次數：${lowCount} 次</p>
-        <p>大號總次數：${highCount} 次</p>
+      selectedRecords.forEach(record => {
+        record.numbers.forEach(number => {
+          const n = Number(number);
 
-        <p>每期平均號碼總和：
-          <strong>${averageSum.toFixed(2)}</strong>
-        </p>
+          if (!Number.isInteger(n) || n < 1 || n > game.maxNumber) {
+            return;
+          }
 
-        <h4>🔥 熱門號碼 TOP 10</h4>
+          frequency[n]++;
 
-        <div class="stats-number-list">
-          ${hotNumbers.map(item => `
-            <span class="stats-number hot">
-              ${String(item.number).padStart(2, "0")}
-              <small>${item.count} 次</small>
-            </span>
-          `).join("")}
+          if (n % 2 === 0) {
+            evenCount++;
+          } else {
+            oddCount++;
+          }
+
+          if (n <= Math.floor(game.maxNumber / 2)) {
+            lowCount++;
+          } else {
+            highCount++;
+          }
+
+          totalSum += n;
+        });
+      });
+
+      const averageSum = totalSum / selectedRecords.length;
+
+      const ranking = Object.entries(frequency)
+        .map(([number, count]) => ({
+          number: Number(number),
+          count
+        }))
+        .sort((a, b) =>
+          b.count - a.count || a.number - b.number
+        );
+
+      const hotNumbers = ranking.slice(0, 10);
+
+      const coldNumbers = [...ranking]
+        .sort((a, b) =>
+          a.count - b.count || a.number - b.number
+        )
+        .slice(0, 10);
+
+      resultArea.innerHTML = `
+        <div class="stats-result">
+
+          <h3>${game.name} 歷史統計結果</h3>
+
+          <p>統計期數：
+            <strong>${selectedRecords.length} 期</strong>
+          </p>
+
+          <p>奇數總次數：${oddCount} 次</p>
+          <p>偶數總次數：${evenCount} 次</p>
+
+          <p>小號總次數：${lowCount} 次</p>
+          <p>大號總次數：${highCount} 次</p>
+
+          <p>每期平均號碼總和：
+            <strong>${averageSum.toFixed(2)}</strong>
+          </p>
+
+          <h4>🔥 熱門號碼 TOP 10</h4>
+
+          <div class="stats-number-list">
+            ${hotNumbers.map(item => `
+              <span class="stats-number hot">
+                ${String(item.number).padStart(2, "0")}
+                <small>${item.count} 次</small>
+              </span>
+            `).join("")}
+          </div>
+
+          <h4>❄️ 冷門號碼 TOP 10</h4>
+
+          <div class="stats-number-list">
+            ${coldNumbers.map(item => `
+              <span class="stats-number cold">
+                ${String(item.number).padStart(2, "0")}
+                <small>${item.count} 次</small>
+              </span>
+            `).join("")}
+          </div>
+
+          <p class="stats-note">
+            ※ 歷史出現次數不代表未來開獎機率，
+            每期開獎結果皆具有隨機性。
+          </p>
+
         </div>
+      `;
+    }
 
-        <h4>❄️ 冷門號碼 TOP 10</h4>
+    renderStatistics();
 
-        <div class="stats-number-list">
-          ${coldNumbers.map(item => `
-            <span class="stats-number cold">
-              ${String(item.number).padStart(2, "0")}
-              <small>${item.count} 次</small>
-            </span>
-          `).join("")}
-        </div>
-
-        <p class="stats-note">
-          ※ 歷史出現次數不代表未來開獎機率，
-          每期開獎結果皆具有隨機性。
-        </p>
-
-      </div>
-    `;
+    periodSelect.addEventListener("change", renderStatistics);
 
   } catch (error) {
     console.error("統計分析讀取失敗：", error);
@@ -1029,6 +1082,7 @@ async function loadStatistics(game) {
       `<p>統計分析讀取失敗：${error.message}</p>`;
   }
 }
+
 
 // ================================
 // 三大彩券統計分析按鈕
