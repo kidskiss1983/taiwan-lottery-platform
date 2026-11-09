@@ -1807,12 +1807,20 @@ document.getElementById("forgotPassword").onclick = async () => {
   }
 
   // 顯示登入狀態與會員權限
+
 onAuthStateChanged(auth, async (user) => {
 
+  // 沒有登入身分時，自動建立匿名訪客登入
   if (!user) {
-    showLogin();
+    try {
+      await signInAnonymously(auth);
+    } catch (error) {
+      console.error("匿名訪客登入失敗：", error);
+      showLogin();
+    }
     return;
   }
+
 
   // 匿名訪客
   if (user.isAnonymous) {
