@@ -1105,7 +1105,74 @@ async function loadStatistics(game) {
           a.count - b.count || a.number - b.number
         )
         .slice(0, 10);
+// ================================
+// 二碼、三碼組合統計
+// ================================
 
+const pairCounts = {};
+const tripleCounts = {};
+
+selectedRecords.forEach(record => {
+
+  // 只使用有效且不重複的正選號碼
+  const numbers = [...new Set(
+    record.numbers
+      .map(Number)
+      .filter(n =>
+        Number.isInteger(n) &&
+        n >= 1 &&
+        n <= game.maxNumber
+      )
+  )].sort((a, b) => a - b);
+
+  // 統計二碼組合
+  for (let i = 0; i < numbers.length; i++) {
+    for (let j = i + 1; j < numbers.length; j++) {
+
+      const key = `${numbers[i]}-${numbers[j]}`;
+
+      pairCounts[key] = (pairCounts[key] || 0) + 1;
+    }
+  }
+
+  // 統計三碼組合
+  for (let i = 0; i < numbers.length; i++) {
+    for (let j = i + 1; j < numbers.length; j++) {
+      for (let k = j + 1; k < numbers.length; k++) {
+
+        const key =
+          `${numbers[i]}-${numbers[j]}-${numbers[k]}`;
+
+        tripleCounts[key] = (tripleCounts[key] || 0) + 1;
+      }
+    }
+  }
+});
+
+// 排序並取得熱門前 10 名
+const topPairs = Object.entries(pairCounts)
+  .map(([combination, count]) => ({
+    combination,
+    count,
+    rate: count / selectedRecords.length * 100
+  }))
+  .sort((a, b) =>
+    b.count - a.count ||
+    a.combination.localeCompare(b.combination)
+  )
+  .slice(0, 10);
+
+const topTriples = Object.entries(tripleCounts)
+  .map(([combination, count]) => ({
+    combination,
+    count,
+    rate: count / selectedRecords.length * 100
+  }))
+  .sort((a, b) =>
+    b.count - a.count ||
+    a.combination.localeCompare(b.combination)
+  )
+  .slice(0, 10);
       resultArea.innerHTML = `
         <div class="stats-result">
 
@@ -1146,11 +1213,60 @@ async function loadStatistics(game) {
               </span>
             `).join("")}
           </div>
+<h4>🔗 二碼組合熱門 TOP 10</h4>
+<div style="display:grid;gap:8px">
+  ${topPairs.map((item, index) => `
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:8px;
+      background:#263449;
+    ">
+      <strong>
+        第 ${index + 1} 名｜${item.combination
+          .split("-")
+          .map(n => String(n).padStart(2, "0"))
+          .join(" + ")}
+      </strong>
+      <span>${item.count} 次｜${item.rate.toFixed(2)}%</span>
+    </div>
+  `).join("")}
+</div>
 
-          <p class="stats-note">
-            ※ 歷史出現次數不代表未來開獎機率，
-            每期開獎結果皆具有隨機性。
-          </p>
+<h4>🔗 三碼組合熱門 TOP 10</h4>
+<div style="display:grid;gap:8px">
+  ${topTriples.map((item, index) => `
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:8px;
+      background:#263449;
+    ">
+      <strong>
+        第 ${index + 1} 名｜${item.combination
+          .split("-")
+          .map(n => String(n).padStart(2, "0"))
+          .join(" + ")}
+      </strong>
+      <span>${item.count} 次｜${item.rate.toFixed(2)}%</span>
+    </div>
+  `).join("")}
+</div>
+         <p class="stats-note">
+  ※ 二碼、三碼比例是該組合在目前統計期數中共同出現的歷史比例。
+  <br>
+  ※ 例如：出現 10 次／統計 100 期＝10%。
+  <br>
+  ※ 歷史比例不代表下一期中獎機率，每期開獎結果皆具有隨機性。
+</p>
 
         </div>
       `;
