@@ -1786,8 +1786,8 @@ numberTitle.textContent =
         selection.secondNumber === number ? null : number;
     }
 
-    message.textContent = "";
-    render();
+   if (message) message.textContent = "";
+render();
   }
 
   numberArea.addEventListener("click", handleNumberClick);
@@ -1799,8 +1799,8 @@ numberTitle.textContent =
     selection.numbers = [];
     selection.secondNumber = null;
     selection.specialNumber = null;
-    message.textContent = "";
-    render();
+    if (message) message.textContent = "";
+render();
   });
 
   render();
