@@ -1,0 +1,38 @@
+
+name: Daily Lottery Auto Sync
+
+on:
+  schedule:
+    # 每天台灣時間 23:30（UTC 15:30）
+    - cron: "30 15 * * *"
+
+  # 允許管理員手動執行
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync-lottery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check JavaScript syntax
+        run: node --check scripts/sync-lottery.mjs
+
+      - name: Sync lottery data to Firebase
+        run: node scripts/sync-lottery.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
