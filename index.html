@@ -716,6 +716,70 @@ button:disabled {
   </details>
 </section>
 
+<!-- 智能選號入口 -->
+<section class="status" id="smartPickSection">
+
+  <details open>
+    <summary style="
+      cursor:pointer;
+      font-size:18px;
+      font-weight:bold;
+      padding:8px 0;
+      color:#f8fafc;
+    ">
+      🧠 智能選號
+    </summary>
+
+    <p>運用不同策略，產生大樂透、今彩539及威力彩號碼組合。</p>
+
+    <div style="margin-bottom:15px">
+      <label for="smartGame"><strong>選擇彩券</strong></label>
+      <select id="smartGame" style="width:100%;padding:10px;margin-top:6px">
+        <option value="lotto649">大樂透</option>
+        <option value="lotto539">今彩539</option>
+        <option value="powerlottery">威力彩</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:15px">
+      <label for="smartStrategy"><strong>選號策略</strong></label>
+      <select id="smartStrategy" style="width:100%;padding:10px;margin-top:6px">
+        <option value="hot">🔥 熱門號碼</option>
+        <option value="cold">❄️ 冷門號碼</option>
+        <option value="balanced">⚖️ 均衡選號</option>
+        <option value="random">🎲 完全隨機</option>
+        <option value="mixed">🧠 混合策略</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:15px">
+      <label for="smartCount"><strong>產生組數</strong></label>
+      <select id="smartCount" style="width:100%;padding:10px;margin-top:6px">
+        <option value="5">5 組</option>
+        <option value="10">10 組</option>
+      </select>
+    </div>
+
+    <button id="generateSmartPick" type="button">
+      🧠 產生智能號碼
+    </button>
+
+    <div id="smartPickResults" style="margin-top:20px">
+      <p>請選擇彩券及選號策略，再產生號碼。</p>
+    </div>
+
+    <div id="smartPickSaveArea" style="margin-top:15px" hidden>
+      <button id="saveSmartPick" type="button">
+        💾 儲存這次產生的號碼
+      </button>
+    </div>
+
+    <p id="smartPickMessage"></p>
+
+  </details>
+
+</section>
+
 
     <section class="status" id="memberStatus">
       <p>會員登入與管理功能</p>
@@ -1218,6 +1282,483 @@ renderFilteredRecords();
 // ================================
 // 三大彩券歷史統計分析
 // ================================
+
+// ================================
+// 智能選號核心設定
+// ================================
+
+const smartGameRules = {
+  lotto649: {
+    name: "大樂透",
+    collection: "draws_lotto649",
+    mainCount: 6,
+    maxNumber: 49,
+    extraField: "specialNumber",
+    extraMax: 49
+  },
+
+  lotto539: {
+    name: "今彩539",
+    collection: "draws_lotto539",
+    mainCount: 5,
+    maxNumber: 39
+  },
+
+  powerlottery: {
+    name: "威力彩",
+    collection: "draws_powerlottery",
+    mainCount: 6,
+    maxNumber: 38,
+    extraField: "secondNumber",
+    extraMax: 8
+  }
+};
+
+// 隨機打亂陣列
+function smartShuffle(array) {
+  const result = [...array];
+
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
+}
+
+// 依歷史資料計算號碼出現次數
+function getSmartFrequency(records, maxNumber, field = "numbers") {
+  const frequency = {};
+
+  for (let i = 1; i <= maxNumber; i++) {
+    frequency[i] = 0;
+  }
+
+  records.forEach(record => {
+    const values = field === "numbers"
+      ? record.numbers
+      : [record[field]];
+
+    if (!Array.isArray(values)) {
+      values.forEach(value => {
+        const n = Number(value);
+
+        if (Number.isInteger(n) && frequency[n] !== undefined) {
+          frequency[n]++;
+        }
+      });
+      return;
+    }
+
+    values.forEach(value => {
+      const n = Number(value);
+
+      if (Number.isInteger(n) && frequency[n] !== undefined) {
+        frequency[n]++;
+      }
+    });
+  });
+
+  return frequency;
+}
+
+// ================================
+// 智能選號：五種策略
+// ================================
+
+// 加權隨機挑選，不重複
+function smartWeightedPick(pool, frequency, count, mode = "hot") {
+  const available = [...pool];
+  const selected = [];
+
+  while (selected.length < count && available.length > 0) {
+    const maxFrequency = Math.max(
+      0,
+      ...available.map(n => frequency[n] || 0)
+    );
+
+    const weights = available.map(n => {
+      const freq = frequency[n] || 0;
+
+      if (mode === "cold") {
+        return maxFrequency - freq + 1;
+      }
+
+      if (mode === "mixed") {
+        return Math.sqrt(freq + 1);
+      }
+
+      return freq + 1;
+    });
+
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+    let random = Math.random() * totalWeight;
+    let selectedIndex = 0;
+
+    for (let i = 0; i < weights.length; i++) {
+      random -= weights[i];
+
+      if (random <= 0) {
+        selectedIndex = i;
+        break;
+      }
+    }
+
+    selected.push(available[selectedIndex]);
+    available.splice(selectedIndex, 1);
+  }
+
+  return selected;
+}
+
+// 計算奇偶、大小平衡分數
+function smartBalanceScore(numbers, maxNumber) {
+  const oddCount = numbers.filter(n => n % 2 !== 0).length;
+
+  const lowCount = numbers.filter(
+    n => n <= Math.floor(maxNumber / 2)
+  ).length;
+
+  const target = numbers.length / 2;
+
+  return Math.abs(oddCount - target)
+    + Math.abs(lowCount - target);
+}
+
+// 產生一般號碼
+function generateSmartMainNumbers(
+  maxNumber,
+  count,
+  frequency,
+  strategy
+) {
+  const allNumbers = Array.from(
+    { length: maxNumber },
+    (_, i) => i + 1
+  );
+
+  // 熱門策略：優先從出現次數前 40% 挑選
+  if (strategy === "hot") {
+    const ranked = [...allNumbers].sort(
+      (a, b) =>
+        frequency[b] - frequency[a] || a - b
+    );
+
+    const pool = ranked.slice(
+      0,
+      Math.max(count, Math.ceil(maxNumber * 0.4))
+    );
+
+    return smartWeightedPick(pool, frequency, count, "hot")
+      .sort((a, b) => a - b);
+  }
+
+  // 冷門策略：優先從出現次數後 40% 挑選
+  if (strategy === "cold") {
+    const ranked = [...allNumbers].sort(
+      (a, b) =>
+        frequency[a] - frequency[b] || a - b
+    );
+
+    const pool = ranked.slice(
+      0,
+      Math.max(count, Math.ceil(maxNumber * 0.4))
+    );
+
+    return smartWeightedPick(pool, frequency, count, "cold")
+      .sort((a, b) => a - b);
+  }
+
+  // 完全隨機策略
+  if (strategy === "random") {
+    return smartShuffle(allNumbers)
+      .slice(0, count)
+      .sort((a, b) => a - b);
+  }
+
+  // 均衡及混合策略
+  const candidates = [];
+
+  for (let i = 0; i < 60; i++) {
+    let numbers;
+
+    if (strategy === "balanced") {
+      numbers = smartShuffle(allNumbers).slice(0, count);
+    } else {
+      numbers = smartWeightedPick(
+        allNumbers,
+        frequency,
+        count,
+        "mixed"
+      );
+    }
+
+    candidates.push({
+      numbers,
+      score: smartBalanceScore(numbers, maxNumber)
+    });
+  }
+
+  const bestScore = Math.min(
+    ...candidates.map(item => item.score)
+  );
+
+  const bestCandidates = candidates.filter(
+    item => item.score === bestScore
+  );
+
+  return smartShuffle(bestCandidates[0].numbers)
+    .sort((a, b) => a - b);
+}
+
+// 產生特別號或第二區號碼
+
+function generateSmartExtraNumber(
+  maxNumber,
+  frequency,
+  strategy,
+  excluded = []
+) {
+  const allNumbers = Array.from(
+    { length: maxNumber },
+    (_, i) => i + 1
+  ).filter(n => !excluded.includes(n));
+
+  if (strategy === "hot" || strategy === "cold") {
+    const ranked = [...allNumbers].sort((a, b) =>
+      strategy === "hot"
+        ? frequency[b] - frequency[a] || a - b
+        : frequency[a] - frequency[b] || a - b
+    );
+
+    const pool = ranked.slice(
+      0,
+      Math.max(1, Math.ceil(maxNumber * 0.4))
+    );
+
+    return smartWeightedPick(
+      pool,
+      frequency,
+      1,
+      strategy
+    )[0];
+  }
+
+  if (strategy === "mixed") {
+    return smartWeightedPick(
+      allNumbers,
+      frequency,
+      1,
+      "mixed"
+    )[0];
+  }
+
+  return allNumbers[
+    Math.floor(Math.random() * allNumbers.length)
+  ];
+}
+
+
+// ================================
+// 執行智能選號
+// ================================
+
+async function generateSmartPicks() {
+  const gameKey = document.getElementById("smartGame").value;
+  const strategy = document.getElementById("smartStrategy").value;
+  const count = Number(document.getElementById("smartCount").value);
+
+  const game = smartGameRules[gameKey];
+
+  const area = document.getElementById("smartPickResults");
+  const saveArea = document.getElementById("smartPickSaveArea");
+  const button = document.getElementById("generateSmartPick");
+  const message = document.getElementById("smartPickMessage");
+
+  area.innerHTML = "<p>正在分析歷史開獎資料並產生號碼……</p>";
+  saveArea.hidden = true;
+  message.textContent = "";
+  button.disabled = true;
+
+  try {
+    const snapshot = await getDocs(
+      collection(db, game.collection)
+    );
+
+    // 只讀取正式開獎資料
+    const records = snapshot.docs
+      .map(doc => doc.data())
+      .filter(record =>
+        record.period &&
+        !String(record.period).startsWith("TEST") &&
+        Array.isArray(record.numbers) &&
+        record.numbers.length === game.mainCount &&
+        new Set(record.numbers.map(Number)).size === game.mainCount &&
+        record.numbers.every(n =>
+          Number.isInteger(Number(n)) &&
+          Number(n) >= 1 &&
+          Number(n) <= game.maxNumber
+        )
+      );
+
+    if (records.length === 0) {
+      area.innerHTML = "<p>目前沒有可供智能選號的正式歷史資料。</p>";
+      return;
+    }
+
+    // 計算一般號碼歷史頻率
+    const frequency = getSmartFrequency(
+      records,
+      game.maxNumber
+    );
+
+    // 計算特別號或第二區歷史頻率
+    const extraFrequency = game.extraField
+      ? getSmartFrequency(
+          records,
+          game.extraMax,
+          game.extraField
+        )
+      : null;
+
+    const results = [];
+    const usedCombinations = new Set();
+
+    let attempts = 0;
+
+    while (results.length < count && attempts < count * 30) {
+      attempts++;
+
+      const numbers = generateSmartMainNumbers(
+        game.maxNumber,
+        game.mainCount,
+        frequency,
+        strategy
+      );
+
+      let extraNumber = null;
+
+      if (game.extraField) {
+        extraNumber = generateSmartExtraNumber(
+          game.extraMax,
+          extraFrequency,
+          strategy,
+          gameKey === "lotto649" ? numbers : []
+        );
+      }
+
+      const signature = [
+        ...numbers,
+        ...(extraNumber === null ? [] : [extraNumber])
+      ].join("-");
+
+      if (usedCombinations.has(signature)) {
+        continue;
+      }
+
+      usedCombinations.add(signature);
+
+      results.push({
+        numbers,
+        extraNumber
+      });
+    }
+
+    if (results.length === 0) {
+      area.innerHTML = "<p>號碼產生失敗，請再試一次。</p>";
+      return;
+    }
+
+    // 暫存本次產生的結果，不寫入 Firebase
+    window.smartPickResults = {
+      game: gameKey,
+      strategy,
+      results
+    };
+
+    const strategyNames = {
+      hot: "熱門號碼",
+      cold: "冷門號碼",
+      balanced: "均衡選號",
+      random: "完全隨機",
+      mixed: "混合策略"
+    };
+
+    area.innerHTML = `
+      <div class="stats-result">
+        <h3>${game.name}智能選號結果</h3>
+
+        <p>參考歷史期數：${records.length} 期</p>
+        <p>選號策略：${strategyNames[strategy]}</p>
+        <p>產生組數：${results.length} 組</p>
+
+        ${results.map((item, index) => `
+          <div style="
+            margin:12px 0;
+            padding:12px;
+            background:#1e293b;
+            border-radius:10px;
+          ">
+            <strong>第 ${index + 1} 組</strong>
+
+            <div style="
+              display:flex;
+              flex-wrap:wrap;
+              gap:7px;
+              margin-top:10px;
+            ">
+              ${item.numbers.map(n => `
+                <span style="
+                  display:inline-flex;
+                  align-items:center;
+                  justify-content:center;
+                  width:38px;
+                  height:38px;
+                  border-radius:50%;
+                  background:#2563eb;
+                  color:white;
+                  font-weight:bold;
+                ">${n}</span>
+              `).join("")}
+
+              ${item.extraNumber !== null ? `
+                <span style="
+                  display:inline-flex;
+                  align-items:center;
+                  justify-content:center;
+                  width:38px;
+                  height:38px;
+                  border-radius:50%;
+                  background:#dc2626;
+                  color:white;
+                  font-weight:bold;
+                ">${item.extraNumber}</span>
+              ` : ""}
+            </div>
+          </div>
+        `).join("")}
+
+        <p style="font-size:13px;color:#94a3b8">
+          ※ 紅色號碼代表特別號或威力彩第二區。
+        </p>
+      </div>
+    `;
+
+  } catch (error) {
+    console.error("智能選號失敗：", error);
+    area.innerHTML = `
+      <p>智能選號失敗：${error.message}</p>
+    `;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+// 綁定智能選號按鈕
+document.getElementById("generateSmartPick").onclick =
+  generateSmartPicks;
 
 async function loadStatistics(game) {
   const area = document.getElementById("statisticsArea");
