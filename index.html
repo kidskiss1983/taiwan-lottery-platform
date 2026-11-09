@@ -595,6 +595,19 @@ const resultCount = document.createElement("p");
 area.appendChild(resultCount);
 
 // 建立表格
+// 手機版隱藏期別欄位
+if (!document.getElementById("mobilePeriodStyle")) {
+  const style = document.createElement("style");
+  style.id = "mobilePeriodStyle";
+  style.textContent = `
+    @media (max-width: 600px) {
+      .period-column {
+        display: none !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
 const table = document.createElement("table");
 table.style.cssText =
   "width:100%;border-collapse:collapse;margin-top:12px";
