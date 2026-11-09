@@ -616,9 +616,12 @@ const thead = document.createElement("thead");
 const headerRow = document.createElement("tr");
 
 ["期別", "開獎日期", "開獎號碼", "特別號／第二區"]
-  .forEach(label => {
+  .forEach((label, index) => {
     const th = document.createElement("th");
     th.textContent = label;
+    if (index === 0) {
+  th.classList.add("period-column");
+}
     th.style.cssText =
       "padding:10px;border-bottom:1px solid #475569;text-align:center";
     headerRow.appendChild(th);
@@ -739,7 +742,9 @@ const matchesSpecial =
 
    values.forEach((value, index) => {
   const td = document.createElement("td");
-
+if (index === 0) {
+  td.classList.add("period-column");
+}
   td.style.cssText =
     "padding:10px;border-bottom:1px solid #334155;text-align:center";
 
@@ -850,6 +855,7 @@ const matchesSpecial =
 
       const detailTitle = document.createElement("h4");
       detailTitle.textContent =
+      detailTitle.classList.add("period-column");
         item.period + " 開獎詳細資訊";
 
       const dateText = document.createElement("p");
