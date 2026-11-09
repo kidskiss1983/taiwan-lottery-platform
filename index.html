@@ -425,6 +425,53 @@ button:disabled {
   color: #94a3b8;
   margin-bottom: 0;
 }
+    /* 三大彩券介紹卡片 */
+.games {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.game {
+  text-align: center;
+  padding: 22px 16px;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #1e293b, #172554);
+}
+
+.game-icon {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.game h2 {
+  color: #93c5fd;
+  margin: 8px 0 14px;
+}
+
+.game p {
+  color: #e2e8f0;
+  line-height: 1.7;
+  margin: 6px 0;
+}
+
+/* 手機版：改為直向排列 */
+@media (max-width: 600px) {
+  .games {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .game {
+    padding: 18px;
+  }
+
+  .game-icon {
+    font-size: 32px;
+  }
+}
   </style>
 </head>
 <body>
