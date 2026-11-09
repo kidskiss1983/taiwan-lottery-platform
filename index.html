@@ -1917,7 +1917,7 @@ onAuthStateChanged(auth, async (user) => {
     if (isAdmin) {
       roleText = "管理員";
     } else if (isVIP) {
-      roleText = "VIP 會員";
+      roleText = "一般會員";
     }
 
     status.innerHTML = `
@@ -1927,7 +1927,7 @@ onAuthStateChanged(auth, async (user) => {
   <p id="verifyStatus"></p>
   <button id="resendVerify">重新寄送驗證信</button>
     ${
-    (isVIP || isAdmin) ? `
+    (!user.isAnonymous || isAdmin) ? `
       <hr>
       <h3>自選號碼</h3>
       <p>選擇彩券種類，自行挑選號碼並儲存組合。</p>
@@ -2012,7 +2012,7 @@ onAuthStateChanged(auth, async (user) => {
   <button id="logout">登出</button>
 `;
     // 啟動 VIP 自選號碼及儲存功能
-if (isVIP || isAdmin) {
+if (!user.isAnonymous || isAdmin) {
 
   // 顯示可選號碼
   setupVipNumberPicker();
@@ -2092,12 +2092,12 @@ else if (
 
       const vipCount = members.filter(m => m.vip === true).length;
 
-      area.replaceChildren();
+    area.replaceChildren();
 
-      const summary = document.createElement("p");
-      summary.textContent =
-        `會員總數：${members.length} 人｜VIP：${vipCount} 人｜一般會員：${members.length - vipCount} 人`;
-      area.appendChild(summary);
+const summary = document.createElement("p");
+summary.textContent =
+  `會員總數：${members.length} 人`;
+area.appendChild(summary);
 
       if (members.length === 0) {
         area.appendChild(document.createTextNode("目前沒有會員資料。"));
@@ -2108,13 +2108,10 @@ else if (
       table.style.width = "100%";
       table.style.borderCollapse = "collapse";
 
-      const headers = [
+const headers = [
   "電子郵件",
   "會員身分",
-  "VIP 狀態",
-  "註冊日期",
-  "VIP 到期日",
-  "管理操作"
+  "註冊日期"
 ];
       const thead = document.createElement("thead");
       const headerRow = document.createElement("tr");
@@ -2143,11 +2140,7 @@ else if (
 const values = [
   member.email || "無資料",
   member.role || "member",
-  member.vip === true ? "VIP" : "一般會員",
-  created,
-  member.vip === true
-    ? (member.vipExpiresAt || "永久")
-    : "—"
+  created
 ];
 values.forEach(value => {
   const td = document.createElement("td");
@@ -2331,8 +2324,7 @@ await updateDoc(doc(db, "users", member.uid), {
   }
 };
 
-actionTd.appendChild(vipButton);
-tr.appendChild(actionTd);
+// 暫時不顯示 VIP 管理按鈕，保留原本功能程式碼
 
 tbody.appendChild(tr);
 
