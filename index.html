@@ -491,6 +491,81 @@ button:disabled {
     font-size: 32px;
   }
 }
+    /* 平台功能導覽 */
+.platform-guide {
+  margin: 20px 0;
+  padding: 22px;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #1e293b, #172554);
+}
+
+.platform-guide h2 {
+  color: #93c5fd;
+  margin-top: 0;
+}
+
+.platform-guide > p {
+  color: #cbd5e1;
+}
+
+.guide-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.guide-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(147, 197, 253, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: transform 0.2s ease,
+              border-color 0.2s ease,
+              background 0.2s ease;
+}
+
+.guide-item:hover {
+  transform: translateY(-3px);
+  border-color: #60a5fa;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.guide-icon {
+  font-size: 30px;
+  flex-shrink: 0;
+}
+
+.guide-item h3 {
+  color: #93c5fd;
+  margin: 2px 0 8px;
+}
+
+.guide-item p {
+  color: #e2e8f0;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* 手機版功能導覽 */
+@media (max-width: 600px) {
+  .guide-list {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-item {
+    padding: 12px;
+  }
+
+  .guide-icon {
+    font-size: 26px;
+  }
+}
   </style>
 </head>
 <body>
