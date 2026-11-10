@@ -1624,6 +1624,270 @@ function generateSmartExtraNumber(
 }
 
 
+// 取得會員組合的分析起始日期（台灣時間）
+function getSmartPickStartDate(pick) {
+  const timestamp = pick.updatedAt || pick.createdAt;
+
+  if (!timestamp || typeof timestamp.toDate !== "function") {
+    return null;
+  }
+
+  const date = timestamp.toDate();
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+
+  const values = {};
+
+  parts.forEach(part => {
+    values[part.type] = part.value;
+  });
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+// ================================
+// 智能選號歷史命中比對
+// ================================
+
+function compareSmartPickWithDraw(pick, draw, gameKey) {
+
+  const drawNumbers = (draw.numbers || []).map(Number);
+  const pickNumbers = (pick.numbers || []).map(Number);
+
+  // 命中的一般號碼
+  const matchedNumbers = pickNumbers.filter(
+    number => drawNumbers.includes(number)
+  );
+
+  // 大樂透特別號
+  const specialHit =
+    gameKey === "lotto649" &&
+    Number(pick.specialNumber) === Number(draw.specialNumber);
+
+  // 威力彩第二區
+  const secondHit =
+    gameKey === "powerlottery" &&
+    Number(pick.secondNumber) === Number(draw.secondNumber);
+
+  return {
+    period: draw.period,
+    date: draw.date,
+    matchedNumbers,
+    matchCount: matchedNumbers.length,
+    specialHit,
+    secondHit
+  };
+}
+
+// ================================
+// 查詢會員智能選號歷史命中
+// ================================
+
+async function loadSmartPickHistory() {
+
+  const user = auth.currentUser;
+
+  const area = document.getElementById(
+    "smartPickHistoryResults"
+  );
+
+  const button = document.getElementById(
+    "analyzeSmartPickHistory"
+  );
+
+  if (!user || user.isAnonymous || user.emailVerified !== true) {
+    area.innerHTML = "<p>請使用已驗證的正式會員帳號登入。</p>";
+    return;
+  }
+
+  button.disabled = true;
+  area.innerHTML = "<p>正在分析歷史命中資料……</p>";
+
+  try {
+
+    // 讀取會員已儲存的組合
+    const picksSnapshot = await getDocs(
+      collection(db, "users", user.uid, "vipPicks")
+    );
+
+    if (picksSnapshot.empty) {
+      area.innerHTML = "<p>目前沒有已儲存的自選組合。</p>";
+      return;
+    }
+
+    // 三種彩券的開獎資料設定
+    const gameCollections = {
+      lotto649: "draws_lotto649",
+      lotto539: "draws_lotto539",
+      powerlottery: "draws_powerlottery"
+    };
+
+    // 讀取三種彩券開獎資料
+    const drawCache = {};
+
+    for (const [gameKey, collectionName] of Object.entries(gameCollections)) {
+
+      const snapshot = await getDocs(
+        collection(db, collectionName)
+      );
+
+      drawCache[gameKey] = snapshot.docs
+        .map(doc => doc.data())
+        .filter(draw =>
+          draw.period &&
+          !String(draw.period).startsWith("TEST") &&
+          Array.isArray(draw.numbers) &&
+          draw.date
+        );
+    }
+
+    const gameNames = {
+      lotto649: "大樂透",
+      lotto539: "今彩539",
+      powerlottery: "威力彩"
+    };
+
+    const historyResults = [];
+
+    picksSnapshot.docs.forEach(doc => {
+
+      const pick = doc.data();
+      const gameKey = pick.game;
+
+      if (!gameCollections[gameKey]) return;
+
+      const startDate = getSmartPickStartDate(pick);
+
+      if (!startDate) {
+        historyResults.push({
+          name: pick.name || "未命名組合",
+          gameName: gameNames[gameKey],
+          error: "缺少有效的儲存時間，無法判斷分析起點。"
+        });
+        return;
+      }
+
+      // 只統計儲存日期之後的開獎
+      const laterDraws = drawCache[gameKey]
+        .filter(draw => draw.date > startDate)
+        .sort((a, b) =>
+          String(a.date).localeCompare(String(b.date))
+        );
+
+      const matches = laterDraws.map(draw =>
+        compareSmartPickWithDraw(pick, draw, gameKey)
+      );
+
+      const highestMatch = matches.length
+        ? Math.max(...matches.map(item => item.matchCount))
+        : 0;
+
+      const totalSpecialHits = matches.filter(
+        item => item.specialHit
+      ).length;
+
+      const totalSecondHits = matches.filter(
+        item => item.secondHit
+      ).length;
+
+      historyResults.push({
+        name: pick.name || "未命名組合",
+        gameName: gameNames[gameKey],
+        startDate,
+        drawCount: matches.length,
+        matches,
+        highestMatch,
+        totalSpecialHits,
+        totalSecondHits
+      });
+
+    });
+
+    window.smartPickHistoryResults = historyResults;
+
+    // 顯示分析結果
+    area.innerHTML = historyResults.map(item => {
+
+      if (item.error) {
+        return `
+          <div class="stats-result" style="margin-bottom:12px">
+            <strong>${item.name}</strong>
+            <p>${item.error}</p>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="stats-result" style="margin-bottom:15px">
+
+          <h3>${item.name}</h3>
+
+          <p>彩券種類：${item.gameName}</p>
+          <p>分析起始日期：${item.startDate}</p>
+          <p>比對開獎期數：${item.drawCount} 期</p>
+          <p>歷次最高命中：${item.highestMatch} 個一般號碼</p>
+          <p>特別號命中：${item.totalSpecialHits} 次</p>
+          <p>第二區命中：${item.totalSecondHits} 次</p>
+
+          <details>
+            <summary>查看每期命中明細</summary>
+
+            ${item.matches.length
+              ? item.matches.map(result => `
+                <div style="
+                  padding:10px;
+                  margin:8px 0;
+                  background:#1e293b;
+                  border-radius:8px;
+                ">
+                  <strong>${result.date}｜第 ${result.period} 期</strong>
+                  <p>
+                    一般號碼命中：
+                    ${result.matchCount} 個
+                    ${result.matchedNumbers.length
+                      ? `（${result.matchedNumbers.join(", ")}）`
+                      : ""}
+                  </p>
+                  ${result.specialHit
+                    ? "<p>🎯 命中特別號</p>"
+                    : ""}
+                  ${result.secondHit
+                    ? "<p>🎯 命中第二區</p>"
+                    : ""}
+                </div>
+              `).join("")
+              : "<p>目前尚無儲存日期之後的開獎資料。</p>"
+            }
+
+          </details>
+
+        </div>
+      `;
+
+    }).join("");
+
+  } catch (error) {
+
+    console.error("歷史命中分析失敗：", error);
+
+    area.innerHTML = `
+      <p>歷史命中分析失敗：${error.message}</p>
+    `;
+
+  } finally {
+    button.disabled = false;
+  }
+}
+
+// 綁定歷史命中查詢按鈕
+document.getElementById("analyzeSmartPickHistory").onclick =
+  loadSmartPickHistory;
+
 /* ================================
    智能選號：組合分析
 ================================ */
