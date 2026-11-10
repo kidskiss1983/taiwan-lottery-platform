@@ -1790,6 +1790,32 @@ async function loadSmartPickHistory() {
         ? Math.max(...matches.map(item => item.matchCount))
         : 0;
 
+      // 一般號碼累計命中數
+      const totalMainHits = matches.reduce(
+        (sum, item) => sum + item.matchCount,
+        0
+      );
+
+      // 每期平均命中數
+      const averageMatch = matches.length
+        ? (totalMainHits / matches.length).toFixed(2)
+        : "0.00";
+
+      // 各命中數量的分布
+      const matchDistribution = {};
+
+      const mainCount = {
+        lotto649: 6,
+        lotto539: 5,
+        powerlottery: 6
+      }[gameKey];
+
+      for (let i = 0; i <= mainCount; i++) {
+        matchDistribution[i] = matches.filter(
+          item => item.matchCount === i
+        ).length;
+      }
+
       const totalSpecialHits = matches.filter(
         item => item.specialHit
       ).length;
@@ -1805,8 +1831,12 @@ async function loadSmartPickHistory() {
         drawCount: matches.length,
         matches,
         highestMatch,
+        totalMainHits,
+        averageMatch,
+        matchDistribution,
         totalSpecialHits,
         totalSecondHits
+
       });
 
     });
@@ -1833,9 +1863,54 @@ async function loadSmartPickHistory() {
           <p>彩券種類：${item.gameName}</p>
           <p>分析起始日期：${item.startDate}</p>
           <p>比對開獎期數：${item.drawCount} 期</p>
-          <p>歷次最高命中：${item.highestMatch} 個一般號碼</p>
-          <p>特別號命中：${item.totalSpecialHits} 次</p>
-          <p>第二區命中：${item.totalSecondHits} 次</p>
+          
+          <div style="
+            margin:12px 0;
+            padding:12px;
+            background:#1e293b;
+            border-radius:10px;
+            line-height:1.9;
+          ">
+            <strong>📊 命中統計總覽</strong>
+
+            <p>累計比對期數：${item.drawCount} 期</p>
+
+            <p>一般號碼總命中：
+              ${item.totalMainHits} 個
+            </p>
+
+            <p>每期平均命中：
+              ${item.averageMatch} 個
+            </p>
+
+            <p>歷史最高命中：
+              ${item.highestMatch} 個
+            </p>
+
+            <p>特別號命中：
+              ${item.totalSpecialHits} 次
+            </p>
+
+            <p>第二區命中：
+              ${item.totalSecondHits} 次
+            </p>
+
+            <hr style="border-color:#475569">
+
+            <strong>🎯 命中數量分布</strong>
+
+            ${Object.entries(item.matchDistribution)
+              .map(([number, count]) => `
+                <div style="
+                  display:flex;
+                  justify-content:space-between;
+                ">
+                  <span>命中 ${number} 個</span>
+                  <strong>${count} 期</strong>
+                </div>
+              `).join("")}
+          </div>
+
 
           <details>
             <summary>查看每期命中明細</summary>
