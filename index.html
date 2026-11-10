@@ -732,6 +732,30 @@ button:disabled {
 
     <p>運用不同策略，產生大樂透、今彩539及威力彩號碼組合。</p>
 
+<div style="
+  margin:12px 0 18px;
+  padding:12px;
+  background:#1e293b;
+  border-left:4px solid #38bdf8;
+  border-radius:8px;
+  line-height:1.8;
+  font-size:14px;
+  color:#e2e8f0;
+">
+  <strong style="color:#7dd3fc">
+    📊 智能選號歷史命中分析
+  </strong>
+  <p style="margin:6px 0">
+    儲存智能選號後，系統將比對後續實際開獎結果，
+    記錄每組號碼的命中數量、特別號或第二區命中情況，
+    並統計歷次最高命中紀錄。
+  </p>
+  <p style="margin:6px 0;color:#fbbf24">
+    ※ 僅供歷史統計與策略比較，彩券開獎具有隨機性，
+    過去結果不代表未來中獎機率。
+  </p>
+</div>
+
     <div style="margin-bottom:15px">
       <label for="smartGame"><strong>選擇彩券</strong></label>
       <select id="smartGame" style="width:100%;padding:10px;margin-top:6px">
@@ -792,6 +816,28 @@ button:disabled {
 
 
     <p id="smartPickMessage"></p>
+
+<!-- 智能選號歷史命中分析 -->
+<div id="smartPickHistoryArea" style="margin-top:20px">
+
+  <h3>📈 歷史命中分析</h3>
+
+  <p style="font-size:14px;color:#94a3b8">
+    比對已儲存的會員號碼與後續實際開獎結果。
+  </p>
+
+  <button
+    id="analyzeSmartPickHistory"
+    type="button"
+  >
+    📊 查詢歷史命中紀錄
+  </button>
+
+  <div id="smartPickHistoryResults" style="margin-top:15px">
+    <p>請登入正式會員後，查詢已儲存組合的命中紀錄。</p>
+  </div>
+
+</div>
 
   </details>
 
