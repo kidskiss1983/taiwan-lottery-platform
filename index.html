@@ -818,18 +818,11 @@ button:disabled {
     <p id="smartPickMessage"></p>
 
 
-<!-- 智能選號歷史命中分析 -->
-<details id="smartPickHistoryArea" style="margin-top:20px">
 
-  <summary style="
-    cursor:pointer;
-    font-size:17px;
-    font-weight:bold;
-    padding:12px 0;
-    color:#f8fafc;
-  ">
-    📈 歷史命中分析（點擊展開／收摺）
-  </summary>
+<!-- 智能選號歷史命中分析 -->
+<div id="smartPickHistoryArea" style="margin-top:20px">
+
+  <h3>📈 歷史命中分析</h3>
 
   <p style="font-size:14px;color:#94a3b8">
     比對已儲存的會員號碼與後續實際開獎結果。
@@ -842,11 +835,13 @@ button:disabled {
     📊 查詢歷史命中紀錄
   </button>
 
-  <div id="smartPickHistoryResults" style="margin-top:15px">
+  <div id="smartPickHistoryResults"
+       style="margin-top:15px"
+       hidden>
     <p>請登入正式會員後，查詢已儲存組合的命中紀錄。</p>
   </div>
 
-</details>
+</div>
 
 
 </section>
