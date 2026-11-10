@@ -770,11 +770,26 @@ button:disabled {
       <p>請選擇彩券及選號策略，再產生號碼。</p>
     </div>
 
-    <div id="smartPickSaveArea" style="margin-top:15px" hidden>
-      <button id="saveSmartPick" type="button">
-        💾 儲存這次產生的號碼
-      </button>
-    </div>
+    
+<div id="smartPickSaveArea" style="margin-top:15px" hidden>
+
+  <label for="smartPickName">
+    <strong>儲存組合名稱</strong>
+  </label>
+
+  <input
+    id="smartPickName"
+    type="text"
+    placeholder="例如：11月熱門號碼"
+    style="width:100%;padding:10px;margin:8px 0"
+  >
+
+  <button id="saveSmartPick" type="button">
+    💾 儲存這次產生的號碼
+  </button>
+
+</div>
+
 
     <p id="smartPickMessage"></p>
 
@@ -1680,6 +1695,21 @@ async function generateSmartPicks() {
       results
     };
 
+// 只有正式會員及管理員可以儲存
+const currentUser = auth.currentUser;
+
+const saveArea = document.getElementById("smartPickSaveArea");
+
+if (
+  currentUser &&
+  !currentUser.isAnonymous &&
+  currentUser.emailVerified === true
+) {
+  saveArea.hidden = false;
+} else {
+  saveArea.hidden = true;
+}
+
     const strategyNames = {
       hot: "熱門號碼",
       cold: "冷門號碼",
@@ -1761,6 +1791,90 @@ async function generateSmartPicks() {
 // 綁定智能選號按鈕
 document.getElementById("generateSmartPick").onclick =
   generateSmartPicks;
+
+// ================================
+// 儲存智能選號結果
+// ================================
+
+document.getElementById("saveSmartPick").onclick = async () => {
+  const user = auth.currentUser;
+  const message = document.getElementById("smartPickMessage");
+  const nameInput = document.getElementById("smartPickName");
+  const button = document.getElementById("saveSmartPick");
+
+  const savedResults = window.smartPickResults;
+
+  // 必須是已驗證的正式會員
+  if (!user || user.isAnonymous || user.emailVerified !== true) {
+    message.textContent = "請使用已驗證的正式會員帳號登入。";
+    return;
+  }
+
+  if (!savedResults || !savedResults.results?.length) {
+    message.textContent = "目前沒有可儲存的智能選號結果。";
+    return;
+  }
+
+  const game = smartGameRules[savedResults.game];
+
+  if (!game) {
+    message.textContent = "彩券種類不正確。";
+    return;
+  }
+
+  const baseName =
+    nameInput.value.trim() || `${game.name}智能選號`;
+
+  button.disabled = true;
+  message.textContent = "正在儲存智能選號……";
+
+  try {
+    const picksRef = collection(
+      db,
+      "users",
+      user.uid,
+      "vipPicks"
+    );
+
+    // 每一組號碼獨立儲存
+    for (let i = 0; i < savedResults.results.length; i++) {
+      const item = savedResults.results[i];
+
+      const pickData = {
+        name: `${baseName}（第 ${i + 1} 組）`,
+        game: savedResults.game,
+        numbers: [...item.numbers].sort((a, b) => a - b),
+        specialNumber:
+          savedResults.game === "lotto649"
+            ? item.extraNumber
+            : null,
+        secondNumber:
+          savedResults.game === "powerlottery"
+            ? item.extraNumber
+            : null,
+        updatedAt: serverTimestamp(),
+        createdAt: serverTimestamp()
+      };
+
+      await setDoc(doc(picksRef), pickData);
+    }
+
+    message.textContent =
+      `成功儲存 ${savedResults.results.length} 組智能選號！`;
+
+    nameInput.value = "";
+
+    // 更新原本會員自選組合清單
+    await loadVipPicks(user.uid);
+
+  } catch (error) {
+    console.error("儲存智能選號失敗：", error);
+    message.textContent =
+      "儲存失敗：" + error.message;
+  } finally {
+    button.disabled = false;
+  }
+};
 
 async function loadStatistics(game) {
   const area = document.getElementById("statisticsArea");
