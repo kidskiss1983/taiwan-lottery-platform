@@ -1578,6 +1578,71 @@ function generateSmartExtraNumber(
 }
 
 
+/* ================================
+   智能選號：組合分析
+================================ */
+
+function analyzeSmartPick(numbers, records, game) {
+
+  // 奇偶分析
+  const oddCount = numbers.filter(n => n % 2 !== 0).length;
+  const evenCount = numbers.length - oddCount;
+
+  // 大小分析
+  const midpoint = Math.floor(game.maxNumber / 2);
+
+  const lowCount = numbers.filter(
+    n => n <= midpoint
+  ).length;
+
+  const highCount = numbers.length - lowCount;
+
+  // 號碼總和值
+  const total = numbers.reduce(
+    (sum, n) => sum + n, 0
+  );
+
+  // 依開獎日期排序，取得最近 10 期
+  const latestRecords = [...records]
+    .sort((a, b) =>
+      String(b.date || "").localeCompare(String(a.date || ""))
+    )
+    .slice(0, 10);
+
+  // 與最近 10 期重複的號碼
+  const recentNumbers = new Set(
+    latestRecords.flatMap(record =>
+      record.numbers.map(Number)
+    )
+  );
+
+  const recentMatches = numbers.filter(
+    n => recentNumbers.has(n)
+  );
+
+  // 歷史出現總次數
+  const frequency = getSmartFrequency(
+    records,
+    game.maxNumber
+  );
+
+  const historicalHits = numbers.reduce(
+    (sum, n) => sum + (frequency[n] || 0),
+    0
+  );
+
+  return {
+    oddCount,
+    evenCount,
+    lowCount,
+    highCount,
+    total,
+    recentMatchCount: recentMatches.length,
+    recentMatches,
+    historicalHits
+  };
+}
+
 // ================================
 // 執行智能選號
 // ================================
@@ -1677,10 +1742,17 @@ async function generateSmartPicks() {
 
       usedCombinations.add(signature);
 
-      results.push({
-        numbers,
-        extraNumber
-      });
+     
+results.push({
+  numbers,
+  extraNumber,
+  analysis: analyzeSmartPick(
+    numbers,
+    records,
+    game
+  )
+});
+
     }
 
     if (results.length === 0) {
@@ -1769,6 +1841,49 @@ if (
                 ">${item.extraNumber}</span>
               ` : ""}
             </div>
+            
+            <div style="
+              margin-top:12px;
+              padding:10px;
+              background:#334155;
+              border-radius:8px;
+              font-size:13px;
+              line-height:1.8;
+              color:#e2e8f0;
+            ">
+              <strong>📊 號碼組合分析</strong>
+
+              <div>
+                奇偶比例：
+                奇數 ${item.analysis.oddCount} 個 /
+                偶數 ${item.analysis.evenCount} 個
+              </div>
+
+              <div>
+                大小比例：
+                小號 ${item.analysis.lowCount} 個 /
+                大號 ${item.analysis.highCount} 個
+              </div>
+
+              <div>
+                號碼總和值：
+                ${item.analysis.total}
+              </div>
+
+              <div>
+                最近 10 期重複號碼：
+                ${item.analysis.recentMatches.length
+                  ? item.analysis.recentMatches.join(", ")
+                  : "無"}
+                （${item.analysis.recentMatchCount} 個）
+              </div>
+
+              <div>
+                歷史累計出現次數：
+                ${item.analysis.historicalHits} 次
+              </div>
+            </div>
+
           </div>
         `).join("")}
 
