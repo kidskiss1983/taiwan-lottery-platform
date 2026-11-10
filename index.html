@@ -1892,9 +1892,46 @@ async function loadSmartPickHistory() {
   }
 }
 
-// 綁定歷史命中查詢按鈕
+
+// ================================
+// 歷史命中分析：展開／收摺切換
+// ================================
+
+let smartPickHistoryLoaded = false;
+
 document.getElementById("analyzeSmartPickHistory").onclick =
-  loadSmartPickHistory;
+  async () => {
+
+    const area = document.getElementById(
+      "smartPickHistoryResults"
+    );
+
+    const button = document.getElementById(
+      "analyzeSmartPickHistory"
+    );
+
+    // 如果目前已展開，就收摺
+    if (area.hidden === false && smartPickHistoryLoaded) {
+      area.hidden = true;
+      button.textContent = "📊 展開歷史命中紀錄";
+      return;
+    }
+
+    // 展開分析結果
+    area.hidden = false;
+
+    // 第一次查詢才載入資料
+    if (!smartPickHistoryLoaded) {
+      button.textContent = "⏳ 正在查詢……";
+
+      await loadSmartPickHistory();
+
+      smartPickHistoryLoaded = true;
+    }
+
+    button.textContent = "📊 收摺歷史命中紀錄";
+  };
+
 
 /* ================================
    智能選號：組合分析
