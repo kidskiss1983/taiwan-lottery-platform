@@ -1631,7 +1631,137 @@ function buildHotPatternStats(records, game) {
   };
 }
 
+// ================================
+// 熱門模式：單組號碼進階統計分析
+// ================================
 
+function analyzeHotPick(numbers, hotStats) {
+
+  if (!hotStats) return null;
+
+  const {
+    frequency,
+    pairCounts,
+    tripleCounts,
+    transitionCounts,
+    transitionSources,
+    groupTransitionCounts,
+    groupTransitionWeights,
+    latestNumbers,
+    total
+  } = hotStats;
+
+  // 1. 單碼統計
+  const singleStats = numbers.map(number => ({
+    number,
+    count: frequency[number] || 0,
+    rate: total
+      ? ((frequency[number] || 0) / total * 100).toFixed(1)
+      : "0.0"
+  }));
+
+  // 2. 雙碼共同出現統計
+  const pairStats = [];
+
+  for (let i = 0; i < numbers.length; i++) {
+    for (let j = i + 1; j < numbers.length; j++) {
+
+      const key = [numbers[i], numbers[j]]
+        .sort((a, b) => a - b)
+        .join("-");
+
+      const hits = pairCounts[key] || 0;
+
+      pairStats.push({
+        numbers: key,
+        count: hits,
+        rate: total
+          ? (hits / total * 100).toFixed(1)
+          : "0.0"
+      });
+    }
+  }
+
+  // 3. 三碼共同出現統計
+  const tripleStats = [];
+
+  for (let i = 0; i < numbers.length; i++) {
+    for (let j = i + 1; j < numbers.length; j++) {
+      for (let k = j + 1; k < numbers.length; k++) {
+
+        const key = [
+          numbers[i],
+          numbers[j],
+          numbers[k]
+        ].sort((a, b) => a - b).join("-");
+
+        const hits = tripleCounts[key] || 0;
+
+        tripleStats.push({
+          numbers: key,
+          count: hits,
+          rate: total
+            ? (hits / total * 100).toFixed(1)
+            : "0.0"
+        });
+      }
+    }
+  }
+
+  // 4. 上期單號接續統計
+  const transitionStats = [];
+
+  latestNumbers.forEach(sourceNumber => {
+
+    const sourceTotal =
+      transitionSources[sourceNumber] || 0;
+
+    if (!sourceTotal) return;
+
+    numbers.forEach(targetNumber => {
+
+      const hits =
+        transitionCounts[sourceNumber]?.[targetNumber] || 0;
+
+      transitionStats.push({
+        source: sourceNumber,
+        target: targetNumber,
+        hits,
+        rate: (hits / sourceTotal * 100).toFixed(1),
+        sourceTotal
+      });
+    });
+  });
+
+  // 5. 上期整組相似號碼接續統計
+  const groupStats = numbers.map(number => {
+
+    const weightedHits =
+      groupTransitionCounts[number] || 0;
+
+    return {
+      number,
+      weightedHits: weightedHits.toFixed(2),
+      rate: groupTransitionWeights > 0
+        ? (
+            weightedHits /
+            groupTransitionWeights * 100
+          ).toFixed(1)
+        : "0.0"
+    };
+  });
+
+  return {
+    total,
+    latestNumbers,
+    singleStats,
+    pairStats,
+    tripleStats,
+    transitionStats,
+    groupStats,
+    groupTransitionWeights
+  };
+}
 // 產生一般號碼
 function generateSmartMainNumbers(
   maxNumber,
