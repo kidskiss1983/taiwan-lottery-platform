@@ -1577,7 +1577,8 @@ function buildHotPatternStats(records, game) {
 
     const nextNumbers =
       recentRecords[i + 1].numbers.map(Number);
-
+    // 累計前一期到下一期的接續樣本
+    transitionSampleCount++;
     // 單號接續
     previousNumbers.forEach(sourceNumber => {
 
@@ -1615,13 +1616,14 @@ function buildHotPatternStats(records, game) {
     }
   }
 
-  return {
+   return {
     recentRecords,
     frequency,
     pairCounts,
     tripleCounts,
     transitionCounts,
     transitionSources,
+    transitionSampleCount,
     groupTransitionCounts,
     groupTransitionWeights,
     latestNumbers,
@@ -1647,15 +1649,16 @@ function generateSmartMainNumbers(
   if (strategy === "hot" && hotStats) {
 
     const {
-      pairCounts,
-      tripleCounts,
-      transitionCounts,
-      transitionSources,
-      groupTransitionCounts,
-      groupTransitionWeights,
-      latestNumbers,
-      total
-    } = hotStats;
+  pairCounts,
+  tripleCounts,
+  transitionCounts,
+  transitionSources,
+  transitionSampleCount,
+  groupTransitionCounts,
+  groupTransitionWeights,
+  latestNumbers,
+  total
+} = hotStats;
 
     // 理論基準機率
     const singleBaseline = count / maxNumber;
