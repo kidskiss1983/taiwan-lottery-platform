@@ -2634,11 +2634,18 @@ async function generateSmartPicks() {
 results.push({
   numbers,
   extraNumber,
+
+  // 原有號碼組合分析
   analysis: analyzeSmartPick(
     numbers,
     records,
     game
-  )
+  ),
+
+  // 只有熱門模式才計算進階統計
+  hotAnalysis: strategy === "hot"
+    ? analyzeHotPick(numbers, hotStats)
+    : null
 });
 
     }
@@ -2770,8 +2777,83 @@ if (
                 歷史累計出現次數：
                 ${item.analysis.historicalHits} 次
               </div>
-            </div>
+            ${item.hotAnalysis ? `
+  <div style="
+    margin-top:12px;
+    padding:12px;
+    background:#172554;
+    border-radius:8px;
+    font-size:13px;
+    line-height:1.8;
+    color:#dbeafe;
+  ">
+    <strong>🔥 熱門模式進階統計分析</strong>
 
+    <div style="margin-top:10px;">
+      <strong>① 單號歷史出現次數（最近100期）</strong>
+      <div>
+        ${item.hotAnalysis.singleStats.map(s =>
+          `${s.number}號：${s.count}次（${s.rate}%）`
+        ).join("　｜　")}
+      </div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <strong>② 雙碼共同出現次數</strong>
+      <div>
+        ${item.hotAnalysis.pairStats
+          .sort((a, b) => b.count - a.count)
+          .map(s =>
+            `${s.numbers}：${s.count}次（${s.rate}%）`
+          ).join("　｜　")}
+      </div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <strong>③ 三碼共同出現次數</strong>
+      <div>
+        ${item.hotAnalysis.tripleStats
+          .sort((a, b) => b.count - a.count)
+          .map(s =>
+            `${s.numbers}：${s.count}次（${s.rate}%）`
+          ).join("　｜　")}
+      </div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <strong>④ 上期單號接續統計</strong>
+      <div>
+        ${item.hotAnalysis.transitionStats.length
+          ? item.hotAnalysis.transitionStats
+              .sort((a, b) => b.rate - a.rate)
+              .map(s =>
+                `${s.source}號 → ${s.target}號：${s.hits}次（${s.rate}%）`
+              ).join("　｜　")
+          : "目前沒有足夠的接續樣本"}
+      </div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <strong>⑤ 上期整組相似號碼接續統計</strong>
+      <div>
+        ${item.hotAnalysis.groupStats
+          .sort((a, b) => b.rate - a.rate)
+          .map(s =>
+            `${s.number}號：加權比例 ${s.rate}%`
+          ).join("　｜　")}
+      </div>
+    </div>
+
+    <div style="
+      margin-top:10px;
+      color:#93c5fd;
+      font-size:12px;
+    ">
+      ※ 統計依最近100期歷史資料計算；接續與加權比例僅供歷史參考，不代表未來開獎機率。
+    </div>
+  </div>
+` : ""}
+            </div>
           </div>
         `).join("")}
 
