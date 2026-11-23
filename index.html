@@ -1558,7 +1558,8 @@ function buildHotPatternStats(records, game) {
   // 單號接續統計
   const transitionCounts = {};
   const transitionSources = {};
-
+  // 接續統計有效樣本數
+  let transitionSampleCount = 0;
   // 整組接續統計
   const groupTransitionCounts = {};
   let groupTransitionWeights = 0;
