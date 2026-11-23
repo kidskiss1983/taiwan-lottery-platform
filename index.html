@@ -1763,10 +1763,20 @@ function generateSmartMainNumbers(
         });
       });
 
-      const transitionRate =
+            // 依樣本數調整接續機率，避免少量樣本過度影響結果
+      const transitionConfidence =
+        transitionSampleCount > 0
+          ? transitionSampleCount / (transitionSampleCount + 20)
+          : 0;
+
+      const rawTransitionRate =
         transitionCount
           ? transitionScore / transitionCount
           : singleBaseline;
+
+      const transitionRate =
+        rawTransitionRate * transitionConfidence +
+        singleBaseline * (1 - transitionConfidence);
 
       // 5. 上期整組號碼接續機率
       const groupRate =
