@@ -1779,14 +1779,25 @@ function generateSmartMainNumbers(
         singleBaseline * (1 - transitionConfidence);
 
       // 5. 上期整組號碼接續機率
-      const groupRate =
-        groupTransitionWeights > 0
-          ? numbers.reduce(
-              (sum, n) =>
-                sum + (groupTransitionCounts[n] || 0),
-              0
-            ) / numbers.length / groupTransitionWeights
-          : singleBaseline;
+const rawGroupRate =
+  groupTransitionWeights > 0
+    ? numbers.reduce(
+        (sum, n) =>
+          sum + (groupTransitionCounts[n] || 0),
+        0
+      ) / numbers.length / groupTransitionWeights
+    : singleBaseline;
+
+// 整組相似歷史樣本的信賴度
+const groupTransitionConfidence =
+  groupTransitionWeights > 0
+    ? groupTransitionWeights / (groupTransitionWeights + 10)
+    : 0;
+
+// 混合歷史接續率與理論基準
+const groupRate =
+  rawGroupRate * groupTransitionConfidence +
+  singleBaseline * (1 - groupTransitionConfidence);
 
       // 綜合五種統計，轉換成相對基準分數
       const score =
