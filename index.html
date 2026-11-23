@@ -1500,13 +1500,24 @@ function smartBalanceScore(numbers, maxNumber) {
 function buildHotPatternStats(records, game) {
 
   // 依期別排序，取最近100期
+  // 依開獎日期排序，取最近100期
   const recentRecords = [...records]
-    .sort((a, b) =>
-      String(b.period).localeCompare(String(a.period))
-    )
+    .sort((a, b) => {
+      const dateCompare =
+        String(b.date || "").localeCompare(
+          String(a.date || "")
+        );
+
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+
+      return String(b.period).localeCompare(
+        String(a.period)
+      );
+    })
     .slice(0, 100)
     .reverse();
-
   const total = recentRecords.length;
 
   const frequency = getSmartFrequency(
