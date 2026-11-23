@@ -1493,35 +1493,318 @@ function smartBalanceScore(numbers, maxNumber) {
     + Math.abs(lowCount - target);
 }
 
+// ================================
+// 熱門模式：最近100期進階統計
+// ================================
+
+function buildHotPatternStats(records, game) {
+
+  // 依期別排序，取最近100期
+  const recentRecords = [...records]
+    .sort((a, b) =>
+      String(b.period).localeCompare(String(a.period))
+    )
+    .slice(0, 100)
+    .reverse();
+
+  const total = recentRecords.length;
+
+  const frequency = getSmartFrequency(
+    recentRecords,
+    game.maxNumber
+  );
+
+  const pairCounts = {};
+  const tripleCounts = {};
+
+  // 統計雙碼、三碼共同出現次數
+  recentRecords.forEach(record => {
+
+    const numbers = [...new Set(
+      record.numbers.map(Number)
+    )].sort((a, b) => a - b);
+
+    for (let i = 0; i < numbers.length; i++) {
+      for (let j = i + 1; j < numbers.length; j++) {
+
+        const pairKey = `${numbers[i]}-${numbers[j]}`;
+
+        pairCounts[pairKey] =
+          (pairCounts[pairKey] || 0) + 1;
+
+        for (let k = j + 1; k < numbers.length; k++) {
+
+          const tripleKey =
+            `${numbers[i]}-${numbers[j]}-${numbers[k]}`;
+
+          tripleCounts[tripleKey] =
+            (tripleCounts[tripleKey] || 0) + 1;
+        }
+      }
+    }
+  });
+
+  // 單號接續統計
+  const transitionCounts = {};
+  const transitionSources = {};
+
+  // 整組接續統計
+  const groupTransitionCounts = {};
+  let groupTransitionWeights = 0;
+
+  const latestNumbers = recentRecords.length
+    ? recentRecords[recentRecords.length - 1]
+        .numbers.map(Number)
+    : [];
+
+  // 前一期 → 下一期
+  for (let i = 0; i < recentRecords.length - 1; i++) {
+
+    const previousNumbers =
+      recentRecords[i].numbers.map(Number);
+
+    const nextNumbers =
+      recentRecords[i + 1].numbers.map(Number);
+
+    // 單號接續
+    previousNumbers.forEach(sourceNumber => {
+
+      transitionSources[sourceNumber] =
+        (transitionSources[sourceNumber] || 0) + 1;
+
+      if (!transitionCounts[sourceNumber]) {
+        transitionCounts[sourceNumber] = {};
+      }
+
+      nextNumbers.forEach(targetNumber => {
+
+        transitionCounts[sourceNumber][targetNumber] =
+          (transitionCounts[sourceNumber][targetNumber] || 0) + 1;
+      });
+    });
+
+    // 整組號碼相似度加權
+    const overlap = previousNumbers.filter(
+      number => latestNumbers.includes(number)
+    ).length;
+
+    const similarity = overlap / game.mainCount;
+
+    if (similarity > 0) {
+
+      groupTransitionWeights += similarity;
+
+      nextNumbers.forEach(targetNumber => {
+
+        groupTransitionCounts[targetNumber] =
+          (groupTransitionCounts[targetNumber] || 0) +
+          similarity;
+      });
+    }
+  }
+
+  return {
+    recentRecords,
+    frequency,
+    pairCounts,
+    tripleCounts,
+    transitionCounts,
+    transitionSources,
+    groupTransitionCounts,
+    groupTransitionWeights,
+    latestNumbers,
+    total
+  };
+}
+
+
 // 產生一般號碼
 function generateSmartMainNumbers(
   maxNumber,
   count,
   frequency,
-  strategy
+  strategy,
+  hotStats = null
 ) {
   const allNumbers = Array.from(
     { length: maxNumber },
     (_, i) => i + 1
   );
 
-  // 熱門策略：優先從出現次數前 40% 挑選
-  if (strategy === "hot") {
-    const ranked = [...allNumbers].sort(
-      (a, b) =>
-        frequency[b] - frequency[a] || a - b
+  // 熱門策略：加入五種歷史統計評分
+  if (strategy === "hot" && hotStats) {
+
+    const {
+      pairCounts,
+      tripleCounts,
+      transitionCounts,
+      transitionSources,
+      groupTransitionCounts,
+      groupTransitionWeights,
+      latestNumbers,
+      total
+    } = hotStats;
+
+    // 理論基準機率
+    const singleBaseline = count / maxNumber;
+
+    const pairBaseline =
+      (count * (count - 1)) /
+      (maxNumber * (maxNumber - 1));
+
+    const tripleBaseline =
+      count >= 3
+        ? (
+            count * (count - 1) * (count - 2)
+          ) / (
+            maxNumber * (maxNumber - 1) * (maxNumber - 2)
+          )
+        : 1;
+
+    // 避免極少數歷史紀錄造成評分過度偏高
+    function normalizeScore(value, baseline) {
+      return Math.min(
+        3,
+        value / Math.max(baseline, 0.000001)
+      );
+    }
+
+    function getCombinationScore(numbers) {
+
+      // 1. 單碼熱門度
+      const singleScore =
+        numbers.reduce(
+          (sum, n) => sum + (frequency[n] || 0),
+          0
+        ) / numbers.length;
+
+      const singleRate =
+        total ? singleScore / total : 0;
+
+      // 2. 雙碼共現率
+      let pairScore = 0;
+      let pairCount = 0;
+
+      for (let i = 0; i < numbers.length; i++) {
+        for (let j = i + 1; j < numbers.length; j++) {
+
+          const key = [numbers[i], numbers[j]]
+            .sort((a, b) => a - b)
+            .join("-");
+
+          pairScore += pairCounts[key] || 0;
+          pairCount++;
+        }
+      }
+
+      const pairRate =
+        pairCount && total
+          ? pairScore / pairCount / total
+          : 0;
+
+      // 3. 三碼共現率
+      let tripleScore = 0;
+      let tripleCount = 0;
+
+      for (let i = 0; i < numbers.length; i++) {
+        for (let j = i + 1; j < numbers.length; j++) {
+          for (let k = j + 1; k < numbers.length; k++) {
+
+            const key = [
+              numbers[i],
+              numbers[j],
+              numbers[k]
+            ].sort((a, b) => a - b).join("-");
+
+            tripleScore += tripleCounts[key] || 0;
+            tripleCount++;
+          }
+        }
+      }
+
+      const tripleRate =
+        tripleCount && total
+          ? tripleScore / tripleCount / total
+          : 0;
+
+      // 4. 上期單號接續機率
+      let transitionScore = 0;
+      let transitionCount = 0;
+
+      latestNumbers.forEach(sourceNumber => {
+
+        const sourceTotal =
+          transitionSources[sourceNumber] || 0;
+
+        if (!sourceTotal) return;
+
+        numbers.forEach(targetNumber => {
+
+          const hits =
+            transitionCounts[sourceNumber]?.[targetNumber] || 0;
+
+          transitionScore += hits / sourceTotal;
+          transitionCount++;
+        });
+      });
+
+      const transitionRate =
+        transitionCount
+          ? transitionScore / transitionCount
+          : singleBaseline;
+
+      // 5. 上期整組號碼接續機率
+      const groupRate =
+        groupTransitionWeights > 0
+          ? numbers.reduce(
+              (sum, n) =>
+                sum + (groupTransitionCounts[n] || 0),
+              0
+            ) / numbers.length / groupTransitionWeights
+          : singleBaseline;
+
+      // 綜合五種統計，轉換成相對基準分數
+      const score =
+        normalizeScore(singleRate, singleBaseline) * 0.20 +
+        normalizeScore(pairRate, pairBaseline) * 0.25 +
+        normalizeScore(tripleRate, tripleBaseline) * 0.25 +
+        normalizeScore(transitionRate, singleBaseline) * 0.15 +
+        normalizeScore(groupRate, singleBaseline) * 0.15;
+
+      return score;
+    }
+
+    // 產生多組候選號碼，挑選綜合評分最高者
+    const candidates = [];
+
+    for (let i = 0; i < 120; i++) {
+
+      const numbers = smartWeightedPick(
+        allNumbers,
+        frequency,
+        count,
+        "hot"
+      );
+
+      candidates.push({
+        numbers,
+        score: getCombinationScore(numbers)
+      });
+    }
+
+    const bestScore = Math.max(
+      ...candidates.map(item => item.score)
     );
 
-    const pool = ranked.slice(
-      0,
-      Math.max(count, Math.ceil(maxNumber * 0.4))
+    const bestCandidates = candidates.filter(
+      item => Math.abs(item.score - bestScore) < 0.000001
     );
 
-    return smartWeightedPick(pool, frequency, count, "hot")
+    return smartShuffle(bestCandidates[0].numbers)
       .sort((a, b) => a - b);
   }
 
-  // 冷門策略：優先從出現次數後 40% 挑選
+  // 冷門策略：維持原本邏輯
   if (strategy === "cold") {
     const ranked = [...allNumbers].sort(
       (a, b) =>
@@ -1537,14 +1820,14 @@ function generateSmartMainNumbers(
       .sort((a, b) => a - b);
   }
 
-  // 完全隨機策略
+  // 完全隨機策略：維持原本邏輯
   if (strategy === "random") {
     return smartShuffle(allNumbers)
       .slice(0, count)
       .sort((a, b) => a - b);
   }
 
-  // 均衡及混合策略
+  // 均衡及混合策略：維持原本邏輯
   const candidates = [];
 
   for (let i = 0; i < 60; i++) {
@@ -1578,6 +1861,7 @@ function generateSmartMainNumbers(
   return smartShuffle(bestCandidates[0].numbers)
     .sort((a, b) => a - b);
 }
+
 
 // 產生特別號或第二區號碼
 
@@ -2121,6 +2405,16 @@ async function generateSmartPicks() {
       game.maxNumber
     );
 
+    // 熱門模式：建立最近100期進階統計
+    const hotStats = strategy === "hot"
+      ? buildHotPatternStats(records, game)
+      : null;
+
+    // 熱門模式只使用最近100期計算單號頻率
+    const hotFrequency = hotStats
+      ? hotStats.frequency
+      : frequency;
+
     // 計算特別號或第二區歷史頻率
     const extraFrequency = game.extraField
       ? getSmartFrequency(
@@ -2138,12 +2432,15 @@ async function generateSmartPicks() {
     while (results.length < count && attempts < count * 30) {
       attempts++;
 
+      
       const numbers = generateSmartMainNumbers(
         game.maxNumber,
         game.mainCount,
-        frequency,
-        strategy
+        hotFrequency,
+        strategy,
+        hotStats
       );
+
 
       let extraNumber = null;
 
